@@ -1,49 +1,42 @@
-# SushiMate Monorepo
+# SushiMate Canada
 
-Curated developer-friendly workspace that bundles the SushiMate frontend (Vite + React + Tailwind) and the companion Express mock API. Everything lives under `apps/` with npm workspaces so engineers can install once and run both stacks with a single command.
+A modern, static sushi ordering website built with Vite + React + Tailwind. Clean white and pink design for a trustworthy Canadian experience.
 
 ## Quick Start
 
 ```bash
-cd site3
-npm install        # installs root + all workspaces
-npm run dev        # runs frontend (5173) + backend (5001) in parallel
+npm install        # installs dependencies
+npm run dev        # runs the frontend on port 5173
 ```
 
 ### Useful Scripts
 
 | Script | What it does |
 |--------|--------------|
-| `npm run dev` | Spins up Vite + Express together via npm-run-all |
-| `npm run build` | Type-checks and builds the frontend into `apps/frontend/dist` |
-| `npm run start` | Launches the Express API only (after `npm install`) |
+| `npm run dev` | Runs Vite dev server |
+| `npm run build` | Builds the frontend into `apps/frontend/dist` |
 | `npm run lint` | ESLint pass for the React app |
-
-> All scripts can be executed from repo root. Under the hood they proxy to the corresponding workspace.
 
 ## Project Layout
 
 ```
-site3/
+SUSHIBEST/
 ├─ apps/
-│  ├─ frontend/   Vite + React SPA (Tailwind, React Router, Context API)
-│  └─ backend/    Express mock API + Mongo-ready models
+│  └─ frontend/   Vite + React SPA (Tailwind, React Router, Context API)
 ├─ .github/       Issue templates + future workflows
 ├─ .vscode/       Recommended tasks/settings for the team
-├─ package.json   npm workspaces config + orchestration scripts
+├─ package.json   Workspace config
 └─ README.md      You're here
 ```
 
 ## Environment & Secrets
 
-- Frontend has no env requirements; API base URL is set in `src/services/api.ts`.
-- Backend reads `apps/backend/.env`. Start from `.env.example` and never commit secrets.
-- `.gitignore` already excludes env files + build artifacts.
+No env requirements; all data is local/static.
 
 ## Dev Notes
 
-- The repo installs cleanly with **Node 20+**.
-- MongoDB is optional; without `MONGODB_URI` the API reverts to the included mock data.
-- Pending follow-ups: `/order/success` + `/order/failed` routes on the frontend, plus photo swaps if we get studio assets.
+- Built with **Node 20+**.
+- Static site with local data, no backend needed.
+- Mobile-optimized with responsive design.
 
-Have fun — everything is wired so another developer can open the repo and ship within minutes.
+Have fun — everything is ready for Canadian sushi lovers!

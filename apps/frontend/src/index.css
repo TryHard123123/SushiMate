@@ -1,33 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;700&family=Bebas+Neue&family=Cairo:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;700&family=Bebas+Neue&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* =====================================================
-   SushiMate — Japanese Lacquer (Red × Black)
-   ===================================================== */
-
 :root {
-  /* Base */
-  --bg:       #0a0000;
-  --bg-2:     #130000;
-  --bg-3:     #1c0303;
-  --bg-4:     #270505;
-  --bg-card:  #160202;
-
-  /* Red scale */
-  --red-dim:    #3d0808;
-  --red-mid:    #7a1010;
-  --red:        #D42B2B;
-  --red-bright: #FF3A3A;
-
-  /* Text */
-  --white:    #F5ECEC;
-  --muted:    #9a7a7a;
-  --faint:    #4a2a2a;
-
-  color-scheme: dark;
+  --bg:       #FFFFFF;
+  --bg-2:     #FEF2F2;
+  --bg-3:     #FEE2E2;
+  --bg-card:  #FFFFFF;
+  --red:      #DC2626;
+  --red-dim:  #FCA5A5;
+  --text:     #111827;
+  --muted:    #6B7280;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,147 +20,50 @@
 body {
   font-family: 'DM Sans', system-ui, sans-serif;
   background: var(--bg);
-  color: var(--white);
+  color: var(--text);
   min-height: 100vh;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ---- Typography ---- */
 h1, h2, h3, h4 {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 700;
-  letter-spacing: 0;
-  text-transform: none;
-  background: none;
-  -webkit-background-clip: unset;
-  background-clip: unset;
-  -webkit-text-fill-color: var(--white);
-  color: var(--white);
+  color: var(--text);
 }
 
-p, span, div { color: inherit; }
-
-a { color: var(--white); text-decoration: none; transition: color 0.2s; }
+a { color: var(--text); text-decoration: none; transition: color 0.2s; }
 a:hover { color: var(--red); }
 
-/* ---- Cards ---- */
-.sushi-card, .glass-card {
-  background: var(--bg-card);
-  border: 1px solid var(--red-dim);
-  border-radius: 3px;
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-.sushi-card:hover, .glass-card:hover {
-  border-color: var(--red);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(212,43,43,0.15);
-}
-
-/* ---- Buttons ---- */
-.glass-button, .btn-primary {
-  background: var(--red);
-  color: #fff;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  font-size: 0.78rem;
-  border: none;
-  cursor: pointer;
-  transition: background 0.18s, transform 0.15s;
-}
-.glass-button:hover, .btn-primary:hover {
-  background: var(--red-bright);
-  transform: translateY(-1px);
-}
-
-/* ---- Inputs ---- */
 input, textarea, select {
-  background: var(--bg-3) !important;
-  border: 1px solid var(--red-dim) !important;
-  color: var(--white) !important;
-  border-radius: 2px !important;
-  padding: 11px 16px !important;
-  font-family: 'DM Sans', sans-serif;
-  transition: border-color 0.2s !important;
+  background: #FFFFFF !important;
+  border: 2px solid var(--red-dim) !important;
+  color: var(--text) !important;
+  border-radius: 12px !important;
+  padding: 14px 18px !important;
+  font-family: 'DM Sans', sans-serif !important;
+  transition: all 0.2s !important;
+  font-size: 0.9rem !important;
 }
 input::placeholder, textarea::placeholder { color: var(--muted) !important; }
 input:focus, textarea:focus, select:focus {
   border-color: var(--red) !important;
   outline: none !important;
-  box-shadow: 0 0 0 2px rgba(212,43,43,0.15) !important;
+  box-shadow: 0 0 0 4px rgba(220,38,38,0.1) !important;
 }
 
-/* ---- Scrollbar ---- */
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-2); }
-::-webkit-scrollbar-thumb { background: var(--red); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: var(--red); border-radius: 999px; }
 
-/* ---- Animations ---- */
-.fade-in { animation: fadeIn 0.4s ease; }
+.fade-in { animation: fadeIn 0.5s ease; }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-slide-up { animation: slide-up 0.3s ease-out; }
 
 @keyframes bounceBtn {
   0%, 100% { transform: scale(1); }
-  50%       { transform: scale(1.12); }
+  50% { transform: scale(1.15); }
 }
-.animate-bounce { animation: bounceBtn 0.24s ease-in-out; }
-
-/* Disable fire remnants */
-.fire-card .fire-particle { display: none !important; }
-.animate-flicker, .animate-flicker-delay,
-.animate-flame, .animate-flame-delay,
-.animate-pulse-slow { animation: none !important; }
-
-/* ---- Hit glow ---- */
-.hit-glow {
-  border-color: var(--red) !important;
-  box-shadow: 0 0 20px rgba(212,43,43,0.12);
-}
-
-/* ---- Text overrides ---- */
-.text-slate-900, .text-slate-800,
-.text-slate-700, .text-slate-600 { color: var(--white) !important; }
-.text-gray-400, .text-gray-500,
-.text-gray-600 { color: var(--muted) !important; }
-
-/* ---- Responsive modal ---- */
-@media (max-width: 768px) {
-  body.modal-open { overflow: hidden; position: fixed; width: 100%; }
-}
-
-/* =====================================================
-   RTL / Arabic language overrides
-   ===================================================== */
-html[dir="rtl"] body {
-  font-family: 'Cairo', 'DM Sans', sans-serif;
-}
-
-html[dir="rtl"] h1,
-html[dir="rtl"] h2,
-html[dir="rtl"] h3,
-html[dir="rtl"] h4 {
-  font-family: 'Cairo', 'Cormorant Garamond', serif;
-  letter-spacing: 0;
-}
-
-/* Flip gradient accents */
-html[dir="rtl"] .rtl-flip-gradient {
-  background: linear-gradient(to left, #D42B2B, #7a1010, transparent);
-}
-
-/* Text alignment helper */
-html[dir="rtl"] .ltr-only {
-  direction: ltr;
-  unicode-bidi: bidi-override;
-}
-
+.animate-bounce { animation: bounceBtn 0.25s ease-in-out; }

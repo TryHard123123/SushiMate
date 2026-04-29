@@ -11,17 +11,18 @@ const navLinks = [
   { to: '/profile', label: 'PROFILE', icon: '👤' },
 ];
 
-const RED     = '#D42B2B';
-const BG      = '#0a0000';
-const BORDER  = '#3d0808';
-const MUTED   = '#9a7a7a';
-const WHITE   = '#F5ECEC';
+const RED = '#DC2626';
+const RED_DIM = '#FCA5A5';
+const BG = '#FFFFFF';
+const BORDER = '#FEE2E2';
+const MUTED = '#6B7280';
 
 const Header = () => {
-  const { state }       = useCart();
-  const location        = useLocation();
+  const { state } = useCart();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const itemCount = state.items.reduce((sum, i) => sum + i.quantity, 0);
 
   useEffect(() => {
@@ -31,7 +32,12 @@ const Header = () => {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Close menu on route change
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
   return (
@@ -39,144 +45,161 @@ const Header = () => {
       <header style={{
         position: 'sticky', top: 0, zIndex: 100,
         background: BG,
-        borderBottom: `1px solid ${BORDER}`,
+        borderBottom: `1px solid ${scrolled ? BORDER : 'transparent'}`,
+        transition: 'box-shadow 0.3s, border-color 0.3s',
+        boxShadow: scrolled ? '0 2px 20px rgba(220,38,38,0.08)' : 'none',
       }}>
         <div style={{
           maxWidth: '1280px', margin: '0 auto',
           padding: mobile ? '0 20px' : '0 40px',
-          height: mobile ? '62px' : '76px',
+          height: mobile ? '64px' : '80px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-
           {/* Logo */}
-          <Link to="/" style={{ display: 'flex', alignItems: 'baseline', gap: '4px', textDecoration: 'none' }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', textDecoration: 'none' }}>
             <span style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: mobile ? '0.9rem' : '1.1rem',
-              letterSpacing: '4px', color: RED, opacity: 0.85,
-              marginRight: '4px',
+              fontSize: mobile ? '1rem' : '1.2rem',
+              letterSpacing: '4px', color: RED, opacity: 0.9,
             }}>木</span>
             <span style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: mobile ? '1.8rem' : '2.5rem',
-              fontWeight: 700, color: WHITE, letterSpacing: '2px',
+              fontSize: mobile ? '2rem' : '2.8rem',
+              fontWeight: 700, color: '#111827', letterSpacing: '2px',
             }}>SushiMate</span>
           </Link>
 
           {/* Desktop Nav */}
           {!mobile && (
-            <nav style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
+            <nav style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
               {navLinks.map(link => {
                 const active = location.pathname === link.to;
                 return (
                   <Link key={link.to} to={link.to} style={{
                     fontFamily: "'DM Sans', sans-serif",
-                    fontWeight: 700, fontSize: '0.68rem', letterSpacing: '2.5px',
+                    fontWeight: 700, fontSize: '0.7rem', letterSpacing: '3px',
                     color: active ? RED : MUTED,
-                    textDecoration: 'none', transition: 'color 0.2s',
-                    borderBottom: active ? `1px solid ${RED}` : '1px solid transparent',
-                    paddingBottom: '2px',
-                  }}>
+                    textDecoration: 'none', transition: 'all 0.2s',
+                    borderBottom: active ? `2px solid ${RED}` : '2px solid transparent',
+                    paddingBottom: '4px',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = RED; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = active ? RED : MUTED; }}>
                     {link.label}
                   </Link>
                 );
               })}
-              <Link to="/cart" style={{ position: 'relative', color: MUTED, textDecoration: 'none' }}>
-                <FontAwesomeIcon icon={faShoppingCart} style={{ fontSize: '1rem' }} />
+              <Link to="/cart" style={{
+                position: 'relative',
+                color: MUTED,
+                textDecoration: 'none',
+                padding: '8px',
+                borderRadius: '50%',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = '#FEF2F2';
+                (e.currentTarget as HTMLElement).style.color = RED;
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'transparent';
+                (e.currentTarget as HTMLElement).style.color = MUTED;
+              }}>
+                <FontAwesomeIcon icon={faShoppingCart} style={{ fontSize: '1.1rem' }} />
                 {itemCount > 0 && (
                   <span style={{
-                    position: 'absolute', top: '-7px', right: '-9px',
+                    position: 'absolute', top: '-2px', right: '-2px',
                     background: RED, color: '#fff',
-                    fontSize: '0.58rem', fontWeight: 800,
-                    borderRadius: '999px', padding: '1px 5px', lineHeight: 1.5,
+                    fontSize: '0.6rem', fontWeight: 800,
+                    borderRadius: '999px', padding: '2px 6px',
+                    minWidth: '18px', textAlign: 'center',
+                    boxShadow: '0 2px 8px rgba(220,38,38,0.3)',
                   }}>{itemCount}</span>
                 )}
               </Link>
             </nav>
           )}
 
-          {/* Mobile right side: cart + burger */}
+          {/* Mobile right side */}
           {mobile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              {/* Cart */}
-              <Link to="/cart" style={{ position: 'relative', color: MUTED, textDecoration: 'none' }}>
-                <FontAwesomeIcon icon={faShoppingCart} style={{ fontSize: '1.1rem' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <Link to="/cart" style={{
+                position: 'relative',
+                color: MUTED,
+                textDecoration: 'none',
+                padding: '6px',
+              }}>
+                <FontAwesomeIcon icon={faShoppingCart} style={{ fontSize: '1.2rem' }} />
                 {itemCount > 0 && (
                   <span style={{
-                    position: 'absolute', top: '-8px', right: '-10px',
+                    position: 'absolute', top: '-4px', right: '-4px',
                     background: RED, color: '#fff',
                     fontSize: '0.6rem', fontWeight: 800,
-                    borderRadius: '999px', padding: '1px 5px', lineHeight: 1.5,
+                    borderRadius: '999px', padding: '2px 5px',
+                    boxShadow: '0 2px 8px rgba(220,38,38,0.3)',
                   }}>{itemCount}</span>
                 )}
               </Link>
-              {/* Burger */}
               <button
                 onClick={() => setOpen(o => !o)}
                 style={{
                   background: 'none', border: 'none', cursor: 'pointer',
-                  color: open ? RED : MUTED, fontSize: '1.3rem',
-                  padding: '4px', lineHeight: 1, transition: 'color 0.2s',
+                  color: open ? RED : MUTED, fontSize: '1.4rem',
+                  padding: '6px', transition: 'color 0.2s',
                 }}
-                aria-label="Menu"
-              >
+                aria-label="Menu">
                 <FontAwesomeIcon icon={open ? faTimes : faBars} />
               </button>
             </div>
           )}
         </div>
 
-        {/* Mobile dropdown menu */}
+        {/* Mobile dropdown */}
         {mobile && (
           <div style={{
             overflow: 'hidden',
-            maxHeight: open ? '320px' : '0',
-            transition: 'max-height 0.35s cubic-bezier(0.4,0,0.2,1)',
-            background: '#0f0000',
+            maxHeight: open ? '400px' : '0',
+            transition: 'max-height 0.4s cubic-bezier(0.4,0,0.2,1)',
+            background: '#FEF2F2',
             borderTop: open ? `1px solid ${BORDER}` : 'none',
           }}>
-            <nav style={{ padding: '12px 0 8px' }}>
+            <nav style={{ padding: '8px 0' }}>
               {navLinks.map(link => {
                 const active = location.pathname === link.to;
                 return (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '14px',
-                      padding: '14px 24px',
-                      fontFamily: "'DM Sans', sans-serif",
-                      fontWeight: 700, fontSize: '0.8rem', letterSpacing: '2px',
-                      color: active ? RED : MUTED,
-                      textDecoration: 'none',
-                      borderLeft: active ? `3px solid ${RED}` : '3px solid transparent',
-                      transition: 'all 0.15s',
-                      background: active ? 'rgba(212,43,43,0.06)' : 'transparent',
-                    }}
-                  >
-                    <span style={{ fontSize: '1rem' }}>{link.icon}</span>
+                  <Link key={link.to} to={link.to} style={{
+                    display: 'flex', alignItems: 'center', gap: '16px',
+                    padding: '16px 24px',
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontWeight: 700, fontSize: '0.85rem', letterSpacing: '2px',
+                    color: active ? RED : MUTED,
+                    textDecoration: 'none',
+                    borderLeft: active ? `3px solid ${RED}` : '3px solid transparent',
+                    transition: 'all 0.15s',
+                    background: active ? 'rgba(220,38,38,0.05)' : 'transparent',
+                  }}>
+                    <span style={{ fontSize: '1.1rem' }}>{link.icon}</span>
                     {link.label}
                   </Link>
                 );
               })}
-              {/* Cart link in menu */}
-              <Link
-                to="/cart"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '14px',
-                  padding: '14px 24px',
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontWeight: 700, fontSize: '0.8rem', letterSpacing: '2px',
-                  color: MUTED, textDecoration: 'none',
-                  borderLeft: '3px solid transparent',
-                }}
-              >
-                <span style={{ fontSize: '1rem' }}>🛒</span>
+              <Link to="/cart" style={{
+                display: 'flex', alignItems: 'center', gap: '16px',
+                padding: '16px 24px',
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700, fontSize: '0.85rem', letterSpacing: '2px',
+                color: MUTED, textDecoration: 'none',
+                borderLeft: '3px solid transparent',
+              }}>
+                <span style={{ fontSize: '1.1rem' }}>🛒</span>
                 CART {itemCount > 0 && (
                   <span style={{
                     background: RED, color: '#fff',
-                    fontSize: '0.6rem', fontWeight: 800,
-                    borderRadius: '999px', padding: '1px 7px',
+                    fontSize: '0.65rem', fontWeight: 800,
+                    borderRadius: '999px', padding: '2px 8px',
                   }}>{itemCount}</span>
                 )}
               </Link>
@@ -185,8 +208,11 @@ const Header = () => {
         )}
       </header>
 
-      {/* Bottom red gradient accent */}
-      <div style={{ height: '1px', background: 'linear-gradient(to right, #D42B2B, #7a1010, transparent)' }} />
+      {/* Bottom accent */}
+      <div style={{
+        height: '3px',
+        background: 'linear-gradient(to right, #DC2626, #FCA5A5, transparent)',
+      }} />
     </>
   );
 };

@@ -15,18 +15,6 @@
       }
     },
     {
-      "label": "Dev: Backend",
-      "type": "shell",
-      "command": "npm run dev:backend",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "panel": "dedicated",
-        "clear": true
-      }
-    },
-    {
       "type": "npm",
       "script": "dev",
       "group": "build",

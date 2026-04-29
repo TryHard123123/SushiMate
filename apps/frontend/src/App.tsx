@@ -20,6 +20,7 @@ import { Product } from './context/CartContext';
 import { getProducts } from './services/api';
 import OrderDetails from './pages/OrderDetails';
 import Payment from './pages/Payment';
+import OrderSuccess from './pages/OrderSuccess';
 
 const ProductsLoader = ({ children }: { children: React.ReactNode }) => {
   const { dispatch } = useCart();
@@ -27,7 +28,8 @@ const ProductsLoader = ({ children }: { children: React.ReactNode }) => {
     const loadProducts = async () => {
       try {
         const response = await getProducts();
-        const products = response.data?.data ?? response.data;
+        // getProducts возвращает { data: products } или сам массив
+        const products = Array.isArray(response) ? response : response.data;
         if (Array.isArray(products)) {
           dispatch({ type: 'LOAD_PRODUCTS', payload: products });
         }
@@ -39,6 +41,7 @@ const ProductsLoader = ({ children }: { children: React.ReactNode }) => {
   }, [dispatch]);
   return <>{children}</>;
 };
+
 
 function AppContent() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -54,6 +57,7 @@ function AppContent() {
         <Header />
         <main className="flex-grow">
           <Routes>
+            <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/payment" element={<Payment />} />
             <Route path="/order/:id" element={<OrderDetails />} />
             <Route path="/" element={<Home onOpenModal={handleOpenModal} />} />

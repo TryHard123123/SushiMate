@@ -5,6 +5,13 @@ interface CartItemProps {
   item: CartItemType;
 }
 
+const RED = '#DC2626';
+const RED_DIM = '#FCA5A5';
+const RED_BG = '#FEF2F2';
+const DARK = '#111827';
+const MUTED = '#6B7280';
+const WHITE = '#FFFFFF';
+
 const CartItem: React.FC<CartItemProps> = ({ item }) => {
   const { dispatch } = useCart();
 
@@ -20,52 +27,161 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
     dispatch({ type: 'REMOVE_ITEM', payload: item.id });
   };
 
-  // Получаем URL картинки (если есть, иначе плейсхолдер)
-  const imageUrl = item.image && item.image !== '' 
-    ? item.image 
-    : 'https://via.placeholder.com/80x80?text=🍣';
+  const imageUrl = item.image && item.image !== ''
+    ? item.image
+    : 'https://via.placeholder.com/120x120?text=🍣';
 
   return (
-    <div className="glass-card rounded-[24px] p-4 mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <div className="h-20 w-20 overflow-hidden rounded-3xl bg-gray-800 shadow-inner flex-shrink-0">
-          <img 
-            src={imageUrl} 
-            alt={item.name} 
-            className="h-full w-full object-cover"
+    <div style={{
+      background: WHITE,
+      border: '1px solid #FEE2E2',
+      borderRadius: '16px',
+      padding: '24px',
+      marginBottom: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '24px',
+      flexWrap: 'wrap',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+      transition: 'all 0.2s',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div style={{
+          width: '110px',
+          height: '110px',
+          overflow: 'hidden',
+          borderRadius: '14px',
+          flexShrink: 0,
+          background: RED_BG,
+          border: '1px solid #FEE2E2',
+        }}>
+          <img
+            src={imageUrl}
+            alt={item.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/80x80?text=🍣';
+              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/120x120?text=🍣';
             }}
           />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-white">{item.name}</h3>
-          <p className="text-orange-400 text-sm font-semibold">{item.price.toFixed(2)} AED each</p>
+          <h3 style={{
+            fontSize: '1.4rem',
+            fontWeight: 700,
+            color: DARK,
+            fontFamily: "'Cormorant Garamond', serif",
+            marginBottom: '6px',
+          }}>
+            {item.name}
+          </h3>
+          <p style={{
+            color: RED,
+            fontSize: '1rem',
+            fontWeight: 600,
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            {item.price.toFixed(2)} CAD each
+          </p>
         </div>
       </div>
-      
-      <div className="flex items-center gap-3 flex-wrap justify-between lg:justify-end">
-        <div className="flex items-center gap-3">
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
             onClick={() => handleUpdateQuantity(item.quantity - 1)}
-            className="bg-gray-800 hover:bg-gray-700 border border-orange-500/50 text-white w-9 h-9 rounded-full font-bold text-lg transition-colors"
-          >
-            -
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              border: `2px solid ${RED_DIM}`,
+              background: 'transparent',
+              color: RED,
+              fontSize: '1.3rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = RED_BG;
+              (e.currentTarget as HTMLElement).style.borderColor = RED;
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = 'transparent';
+              (e.currentTarget as HTMLElement).style.borderColor = RED_DIM;
+            }}>
+            −
           </button>
-          <span className="text-white font-bold text-xl min-w-[30px] text-center">
+          
+          <span style={{
+            fontSize: '1.4rem',
+            fontWeight: 700,
+            color: DARK,
+            minWidth: '36px',
+            textAlign: 'center',
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
             {item.quantity}
           </span>
+          
           <button
             onClick={() => handleUpdateQuantity(item.quantity + 1)}
-            className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white w-9 h-9 rounded-full font-bold text-lg transition-all shadow-lg"
-          >
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              border: 'none',
+              background: RED,
+              color: '#fff',
+              fontSize: '1.3rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 12px rgba(220,38,38,0.3)',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = '#EF4444';
+              (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = RED;
+              (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+            }}>
             +
           </button>
         </div>
+        
         <button
           onClick={handleRemove}
-          className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-full transition-colors text-sm font-semibold"
-        >
+          style={{
+            padding: '12px 24px',
+            borderRadius: '50px',
+            border: `2px solid #FEE2E2`,
+            background: 'transparent',
+            color: MUTED,
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+            letterSpacing: '1px',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background = RED_BG;
+            (e.currentTarget as HTMLElement).style.color = RED;
+            (e.currentTarget as HTMLElement).style.borderColor = RED;
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = 'transparent';
+            (e.currentTarget as HTMLElement).style.color = MUTED;
+            (e.currentTarget as HTMLElement).style.borderColor = '#FEE2E2';
+          }}>
           Remove
         </button>
       </div>

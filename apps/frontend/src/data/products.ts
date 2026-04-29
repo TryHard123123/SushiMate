@@ -60,7 +60,7 @@ export const products: Product[] = [
     price: 12,
     rating: 4.5,
     reviewCount: 67,
-    isHit: true,
+    isHit: false,
     image: "https://images.unsplash.com/photo-1618160702438-9b02fe65c1b4?w=400&h=300&fit=crop",
     images: [
       "https://images.unsplash.com/photo-1618160702438-9b02fe65c1b4?w=800&h=600&fit=crop",
@@ -124,7 +124,7 @@ export const products: Product[] = [
     price: 8,
     rating: 4.6,
     reviewCount: 45,
-    isHit: false,
+    isHit: true,
     image: "https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?w=400&h=300&fit=crop",
     images: [
       "https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?w=800&h=600&fit=crop"

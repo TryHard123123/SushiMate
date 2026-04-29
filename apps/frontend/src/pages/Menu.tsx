@@ -6,24 +6,22 @@ import { useIsMobile } from '../hooks/useIsMobile';
 
 interface MenuProps { onOpenModal: (product: Product) => void; }
 
-const BG      = '#0a0000';
-const BG2     = '#130000';
-const RED     = '#D42B2B';
-const RED_DIM = '#3d0808';
-const WHITE   = '#F5ECEC';
-const MUTED   = '#9a7a7a';
+const RED = '#DC2626';
+const RED_DIM = '#FCA5A5';
+const RED_BG = '#FEF2F2';
+const MUTED = '#6B7280';
 
 const categoryOrder = ['rolls', 'sets', 'sides', 'drinks'];
-const categories    = ['all', ...categoryOrder];
+const categories = ['all', ...categoryOrder];
 const catLabels: Record<string, string> = {
   all: 'All', rolls: 'Rolls', sets: 'Sets', sides: 'Sides', drinks: 'Drinks',
 };
 
 const Menu: React.FC<MenuProps> = ({ onOpenModal }) => {
   const { state } = useCart();
-  const isMobile  = useIsMobile();
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
-  const [cat, setCat]       = useState('all');
+  const [cat, setCat] = useState('all');
 
   const products = state.products || [];
 
@@ -41,66 +39,123 @@ const Menu: React.FC<MenuProps> = ({ onOpenModal }) => {
 
   if (!products.length) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, background: BG }}>
+      <div style={{
+        minHeight: '60vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 14,
+        background: '#FFFFFF',
+      }}>
         <div style={{ fontSize: '2.5rem' }}>🍣</div>
-        <p style={{ color: MUTED, fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem', letterSpacing: '1px' }}>Loading menu…</p>
+        <p style={{
+          color: MUTED,
+          fontFamily: "'Cormorant Garamond', serif",
+          fontSize: '1.2rem',
+          letterSpacing: '1px',
+        }}>
+          Loading menu…
+        </p>
       </div>
     );
   }
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', padding: isMobile ? '28px 16px 60px' : '56px 40px 80px' }} className="fade-in">
-      <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-
-        {/* Heading */}
-        <div style={{ marginBottom: '48px' }}>
-          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.65rem', letterSpacing: '5px', color: RED, textTransform: 'uppercase', marginBottom: '8px' }}>
+    <div style={{
+      background: '#FFFFFF',
+      minHeight: '100vh',
+      padding: isMobile ? '32px 20px 64px' : '64px 40px 96px',
+    }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '56px', textAlign: 'center' }}>
+          <div style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: '0.65rem',
+            letterSpacing: '6px',
+            color: RED,
+            textTransform: 'uppercase',
+            marginBottom: '12px',
+          }}>
             SushiMate
           </div>
-          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isMobile ? '2.2rem' : '3rem', fontWeight: 700, color: WHITE, lineHeight: 1 }}>
+          <h1 style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: isMobile ? '2.4rem' : '3.5rem',
+            fontWeight: 700,
+            color: '#111827',
+            lineHeight: 1,
+            marginBottom: '16px',
+          }}>
             Our Menu
           </h1>
-          <div style={{ width: '40px', height: '2px', background: RED, marginTop: '14px' }} />
+          <div style={{ width: '60px', height: '3px', background: RED, margin: '0 auto', borderRadius: '2px' }} />
         </div>
 
         {/* Search + Filters */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '14px', marginBottom: '36px' }}>
-          {/* Search */}
-          <div style={{ position: 'relative', flex: '1 1 260px', maxWidth: '360px' }}>
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '16px',
+          marginBottom: '48px',
+          justifyContent: 'center',
+        }}>
+          <div style={{ position: 'relative', flex: '1 1 300px', maxWidth: '400px' }}>
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search rolls, sets, drinks…"
+              placeholder="      Search rolls, sets, drinks…"
               style={{
-                width: '100%', padding: '11px 16px 11px 40px',
-                background: BG2, border: `1px solid ${RED_DIM}`,
-                color: WHITE, borderRadius: '2px',
-                fontSize: '0.85rem', fontFamily: "'DM Sans', sans-serif",
+                width: '100%',
+                padding: '14px 20px 14px 48px',
+                background: RED_BG,
+                border: `2px solid ${RED_DIM}`,
+                color: '#111827',
+                borderRadius: '50px',
+                fontSize: '0.9rem',
+                fontFamily: "'DM Sans', sans-serif",
                 outline: 'none',
+                transition: 'all 0.2s',
               }}
-              onFocus={e  => { e.target.style.borderColor = RED; }}
-              onBlur={e   => { e.target.style.borderColor = RED_DIM; }}
+              onFocus={e => {
+                e.target.style.borderColor = RED;
+                e.target.style.background = '#FFFFFF';
+              }}
+              onBlur={e => {
+                e.target.style.borderColor = RED_DIM;
+                e.target.style.background = RED_BG;
+              }}
             />
-            <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: MUTED, pointerEvents: 'none', fontSize: '0.85rem' }}>
-              🔍
-            </span>
+            <span style={{
+              position: 'absolute',
+              left: '18px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: MUTED,
+              fontSize: '1rem',
+            }}>🔍</span>
           </div>
 
-          {/* Category tabs */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
             {categories.map(c => {
               const active = cat === c;
               return (
                 <button key={c} onClick={() => setCat(c)} style={{
-                  padding: '8px 22px', borderRadius: '2px',
+                  padding: '10px 28px',
+                  borderRadius: '50px',
                   fontFamily: "'DM Sans', sans-serif",
-                  fontWeight: 700, fontSize: '0.68rem',
-                  letterSpacing: '1.5px', textTransform: 'uppercase',
-                  cursor: 'pointer', transition: 'all 0.15s',
-                  background: active ? RED      : 'transparent',
-                  color:      active ? '#fff'   : MUTED,
-                  border:     active ? 'none'   : `1px solid ${RED_DIM}`,
+                  fontWeight: 700,
+                  fontSize: '0.7rem',
+                  letterSpacing: '1.5px',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  background: active ? RED : 'transparent',
+                  color: active ? '#fff' : MUTED,
+                  border: active ? 'none' : `2px solid ${RED_DIM}`,
                 }}>
                   {catLabels[c]}
                 </button>
@@ -109,36 +164,58 @@ const Menu: React.FC<MenuProps> = ({ onOpenModal }) => {
           </div>
         </div>
 
-        {/* Count */}
-        <div style={{ marginBottom: '22px', fontFamily: "'DM Sans', sans-serif", fontSize: '0.72rem', color: '#5a2a2a', letterSpacing: '1px' }}>
-          {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
+        {/* Results count */}
+        <div style={{
+          marginBottom: '28px',
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: '0.8rem',
+          color: MUTED,
+          letterSpacing: '1px',
+          textAlign: 'center',
+        }}>
+          {filtered.length} {filtered.length === 1 ? 'item' : 'items'} found
         </div>
 
         {/* Grid */}
         {filtered.length === 0 ? (
-          <div style={{ padding: '80px 0', textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🔍</div>
-            <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.8rem', color: WHITE, marginBottom: '16px' }}>
+          <div style={{ padding: '100px 0', textAlign: 'center' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🔍</div>
+            <h3 style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: '2rem',
+              color: '#111827',
+              marginBottom: '20px',
+            }}>
               Nothing found
             </h3>
             <button onClick={() => { setSearch(''); setCat('all'); }} style={{
-              background: 'transparent', border: `1px solid ${RED_DIM}`,
-              color: MUTED, fontFamily: "'DM Sans', sans-serif",
-              fontSize: '0.72rem', letterSpacing: '1.5px', textTransform: 'uppercase',
-              padding: '10px 28px', borderRadius: '2px', cursor: 'pointer',
-              transition: 'border-color 0.2s, color 0.2s',
+              background: 'transparent',
+              border: `2px solid ${RED}`,
+              color: RED,
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              letterSpacing: '2px',
+              textTransform: 'uppercase',
+              padding: '12px 32px',
+              borderRadius: '50px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
             }}>
               Clear Filters
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(248px, 1fr))', gap: isMobile ? '12px' : '20px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: isMobile ? '20px' : '28px',
+          }}>
             {filtered.map(p => (
               <ProductCard key={p._id || p.id} product={p} onOpenModal={onOpenModal} />
             ))}
           </div>
         )}
-
       </div>
     </div>
   );

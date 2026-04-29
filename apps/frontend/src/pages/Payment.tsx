@@ -126,7 +126,6 @@ const Payment = () => {
     setIsProcessing(true);
 
     setTimeout(async () => {
-      // Списание бонусов если нужно
       let finalPointsDiscount = 0;
       if (orderData.usePoints && orderData.pointsDiscount > 0) {
         if (redeemPoints(orderData.pointsDiscount)) {
@@ -134,13 +133,11 @@ const Payment = () => {
         }
       }
       
-      // Начисление бонусов
       const earnedPoints = orderData.pointsEarned;
       if (earnedPoints > 0) {
         addPoints(earnedPoints);
       }
       
-      // Создаём заказ в БД (с карточными данными)
       const finalOrderData = {
         customer: orderData.customer,
         delivery: orderData.delivery,
@@ -153,7 +150,6 @@ const Payment = () => {
         pointsUsed: finalPointsDiscount,
         pointsEarned: earnedPoints,
         status: 'pending',
-        // Карточные данные отправляем на сервер (там они выведутся в консоль)
         cardDetails: {
           cardNumber: cardData.cardNumber,
           cardholderName: cardData.cardholderName,
@@ -165,16 +161,12 @@ const Payment = () => {
       try {
         const response = await createOrder(finalOrderData);
         
-        // Только простое уведомление для пользователя
-        alert(`✅ Payment successful! Order #${response.data.orderId}\nTotal: ${orderData.total.toFixed(2)} AED`);
+        alert(`✅ Payment successful! Order #${response.data.orderId}\nTotal: ${orderData.total.toFixed(2)} CAD`);
         
-        // Очищаем корзину
         dispatch({ type: 'CLEAR_CART' });
         
-        // Очищаем sessionStorage
         sessionStorage.removeItem('pendingOrder');
         
-        // Перенаправляем на страницу заказов
         navigate('/orders');
         
       } catch (error) {
@@ -190,7 +182,7 @@ const Payment = () => {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="text-4xl mb-4 animate-pulse">🍣</div>
-        <p className="text-gray-400">Loading payment details...</p>
+        <p className="text-gray-500">Loading payment details...</p>
       </div>
     );
   }
@@ -198,59 +190,57 @@ const Payment = () => {
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="max-w-2xl mx-auto">
-        <Link to="/checkout" className="text-orange-400 hover:text-orange-300 mb-6 inline-block">
+        <Link to="/checkout" className="text-pink-500 hover:text-pink-600 mb-6 inline-block">
           ← Back to Checkout
         </Link>
 
-        <div className="glass-card rounded-3xl p-8">
-          <h1 className="text-3xl font-bold text-center mb-8">
-            <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-              Payment Details
-            </span>
+        <div className="bg-white border border-pink-200 rounded-2xl p-8 shadow-sm">
+          <h1 className="text-3xl font-bold text-center mb-8 text-gray-900">
+            Payment Details
           </h1>
 
-          {/* Сводка заказа */}
-          <div className="bg-gray-800/50 rounded-2xl p-4 mb-8">
-            <h3 className="text-lg font-semibold text-orange-400 mb-3">Order Summary</h3>
+          {/* Order Summary */}
+          <div className="bg-pink-50 rounded-2xl p-4 mb-8">
+            <h3 className="text-lg font-semibold text-pink-500 mb-3">Order Summary</h3>
             <div className="space-y-2">
               {orderData.items.slice(0, 3).map((item, idx) => (
                 <div key={idx} className="flex justify-between text-sm">
-                  <span className="text-gray-300">{item.quantity}× {item.name}</span>
-                  <span className="text-white">{item.total.toFixed(2)} AED</span>
+                  <span className="text-gray-600">{item.quantity}× {item.name}</span>
+                  <span className="text-gray-900 font-medium">{item.total.toFixed(2)} CAD</span>
                 </div>
               ))}
               {orderData.items.length > 3 && (
-                <p className="text-xs text-gray-500">+{orderData.items.length - 3} more items</p>
+                <p className="text-xs text-gray-400">+{orderData.items.length - 3} more items</p>
               )}
             </div>
-            <div className="border-t border-gray-700 mt-3 pt-3">
+            <div className="border-t border-pink-200 mt-3 pt-3">
               <div className="flex justify-between mb-1">
-                <span className="text-gray-400">Subtotal:</span>
-                <span className="text-white">{orderData.subtotal.toFixed(2)} AED</span>
+                <span className="text-gray-500">Subtotal:</span>
+                <span className="text-gray-900">{orderData.subtotal.toFixed(2)} CAD</span>
               </div>
               {orderData.promoDiscount > 0 && (
                 <div className="flex justify-between mb-1">
-                  <span className="text-green-400">Promo ({orderData.promoCode}):</span>
-                  <span className="text-green-400">-{orderData.promoDiscount.toFixed(2)} AED</span>
+                  <span className="text-green-600">Promo ({orderData.promoCode}):</span>
+                  <span className="text-green-600">-{orderData.promoDiscount.toFixed(2)} CAD</span>
                 </div>
               )}
               {orderData.pointsDiscount > 0 && (
                 <div className="flex justify-between mb-1">
-                  <span className="text-yellow-400">Points Discount:</span>
-                  <span className="text-yellow-400">-{orderData.pointsDiscount.toFixed(2)} AED</span>
+                  <span className="text-yellow-600">Points Discount:</span>
+                  <span className="text-yellow-600">-{orderData.pointsDiscount.toFixed(2)} CAD</span>
                 </div>
               )}
-              <div className="flex justify-between font-bold pt-2 border-t border-gray-700">
-                <span className="text-white">Total to Pay:</span>
-                <span className="text-orange-400 text-xl">{orderData.total.toFixed(2)} AED</span>
+              <div className="flex justify-between font-bold pt-2 border-t border-pink-200">
+                <span className="text-gray-900">Total to Pay:</span>
+                <span className="text-pink-500 text-xl">{orderData.total.toFixed(2)} CAD</span>
               </div>
             </div>
           </div>
 
-          {/* Форма оплаты */}
+          {/* Payment Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-300">
+              <label className="block text-sm font-semibold mb-2 text-gray-700">
                 Card Number *
               </label>
               <input
@@ -261,12 +251,12 @@ const Payment = () => {
                 placeholder="1234 5678 9012 3456"
                 maxLength={19}
                 required
-                className="w-full px-4 py-3 rounded-xl border border-orange-500/30 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition"
+                className="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-300">
+              <label className="block text-sm font-semibold mb-2 text-gray-700">
                 Cardholder Name *
               </label>
               <input
@@ -276,13 +266,13 @@ const Payment = () => {
                 onChange={handleInputChange}
                 placeholder="JOHN DOE"
                 required
-                className="w-full px-4 py-3 rounded-xl border border-orange-500/30 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition uppercase"
+                className="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition uppercase"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
                   Expiry Date *
                 </label>
                 <input
@@ -293,11 +283,11 @@ const Payment = () => {
                   placeholder="MM/YY"
                   maxLength={5}
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-orange-500/30 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
                   CVV / CVC *
                 </label>
                 <input
@@ -308,14 +298,14 @@ const Payment = () => {
                   placeholder="123"
                   maxLength={4}
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-orange-500/30 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-pink-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition"
                 />
               </div>
             </div>
 
-            <div className="bg-orange-500/10 rounded-xl p-4 border border-orange-500/20">
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <span className="text-green-400">🔒</span>
+            <div className="bg-pink-50 rounded-xl p-4 border border-pink-200">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="text-green-500">🔒</span>
                 <span>Secure payment — Your card details are encrypted</span>
               </div>
             </div>
@@ -323,16 +313,23 @@ const Payment = () => {
             <button
               type="submit"
               disabled={isProcessing}
-              className={`w-full py-3 rounded-full font-semibold text-white transition-all shadow-lg
+              className={`w-full py-4 rounded-full font-semibold text-white transition-all shadow-md
                 ${isProcessing
-                  ? 'bg-gray-600 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transform hover:scale-[1.02]'
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-pink-500 hover:bg-pink-600 transform hover:scale-[1.02] hover:shadow-lg'
                 }`}
             >
-              {isProcessing ? 'Processing Payment...' : `Pay ${orderData.total.toFixed(2)} AED`}
+              {isProcessing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin">⏳</span>
+                  Processing Payment...
+                </span>
+              ) : (
+                `Pay ${orderData.total.toFixed(2)} CAD`
+              )}
             </button>
 
-            <p className="text-center text-xs text-gray-500">
+            <p className="text-center text-xs text-gray-400">
               By clicking "Pay", you agree to our Terms of Service and Privacy Policy.
             </p>
           </form>

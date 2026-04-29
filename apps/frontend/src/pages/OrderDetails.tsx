@@ -90,12 +90,12 @@ const OrderDetails = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-500/20 text-yellow-400';
-      case 'preparing': return 'bg-blue-500/20 text-blue-400';
-      case 'delivering': return 'bg-purple-500/20 text-purple-400';
-      case 'delivered': return 'bg-green-500/20 text-green-400';
-      case 'cancelled': return 'bg-red-500/20 text-red-400';
-      default: return 'bg-gray-500/20 text-gray-400';
+      case 'pending': return 'bg-yellow-100 text-yellow-700';
+      case 'preparing': return 'bg-blue-100 text-blue-700';
+      case 'delivering': return 'bg-purple-100 text-purple-700';
+      case 'delivered': return 'bg-green-100 text-green-700';
+      case 'cancelled': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -114,7 +114,7 @@ const OrderDetails = () => {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="text-4xl mb-4 animate-pulse">🍣</div>
-        <p className="text-gray-400">Loading order details...</p>
+        <p className="text-gray-500">Loading order details...</p>
       </div>
     );
   }
@@ -122,8 +122,8 @@ const OrderDetails = () => {
   if (!order) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-4xl font-bold mb-8 text-white">Order Not Found</h1>
-        <Link to="/orders" className="text-orange-400 hover:text-orange-300">
+        <h1 className="text-4xl font-bold mb-8 text-gray-900">Order Not Found</h1>
+        <Link to="/orders" className="text-pink-500 hover:text-pink-600">
           ← Back to Orders
         </Link>
       </div>
@@ -133,82 +133,82 @@ const OrderDetails = () => {
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="max-w-4xl mx-auto">
-        <Link to="/orders" className="text-orange-400 hover:text-orange-300 mb-6 inline-block">
+        <Link to="/orders" className="text-pink-500 hover:text-pink-600 mb-6 inline-block">
           ← Back to Orders
         </Link>
 
-        <div className="glass-card rounded-3xl p-8">
+        <div className="bg-white border border-pink-200 rounded-2xl p-8 shadow-sm">
           {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-orange-500/30">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-pink-100">
             <div>
-              <h1 className="text-2xl font-bold text-white">Order #{order.orderId}</h1>
-              <p className="text-gray-400 text-sm mt-1">
+              <h1 className="text-2xl font-bold text-gray-900">Order #{order.orderId}</h1>
+              <p className="text-gray-500 text-sm mt-1">
                 Placed on {new Date(order.createdAt).toLocaleString()}
               </p>
             </div>
-            <div className={`px-4 py-1 rounded-full ${getStatusColor(order.status)} text-sm font-semibold mt-2 md:mt-0`}>
+            <div className={`px-4 py-1 rounded-full text-sm font-semibold mt-2 md:mt-0 ${getStatusColor(order.status)}`}>
               {getStatusText(order.status)}
             </div>
           </div>
 
           {/* Customer Info */}
           <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-gray-800/50 rounded-2xl p-4">
-              <h3 className="text-lg font-semibold text-orange-400 mb-3">Customer Info</h3>
-              <p className="text-white">👤 {order.customer.name}</p>
-              <p className="text-gray-300 mt-1">📞 {order.customer.phone}</p>
+            <div className="bg-gray-50 rounded-2xl p-4">
+              <h3 className="text-lg font-semibold text-pink-500 mb-3">Customer Info</h3>
+              <p className="text-gray-900">👤 {order.customer.name}</p>
+              <p className="text-gray-600 mt-1">📞 {order.customer.phone}</p>
               {order.customer.email && order.customer.email !== 'Not provided' && (
-                <p className="text-gray-300 mt-1">✉️ {order.customer.email}</p>
+                <p className="text-gray-600 mt-1">✉️ {order.customer.email}</p>
               )}
             </div>
 
-            <div className="bg-gray-800/50 rounded-2xl p-4">
-              <h3 className="text-lg font-semibold text-orange-400 mb-3">Delivery Address</h3>
-              <p className="text-white">📍 {order.delivery.fullAddress}</p>
+            <div className="bg-gray-50 rounded-2xl p-4">
+              <h3 className="text-lg font-semibold text-pink-500 mb-3">Delivery Address</h3>
+              <p className="text-gray-900">📍 {order.delivery.fullAddress}</p>
               {order.delivery.specialInstructions && (
-                <p className="text-gray-400 text-sm mt-2">📝 {order.delivery.specialInstructions}</p>
+                <p className="text-gray-500 text-sm mt-2">📝 {order.delivery.specialInstructions}</p>
               )}
             </div>
           </div>
 
           {/* Items */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-orange-400 mb-3">Items</h3>
+            <h3 className="text-lg font-semibold text-pink-500 mb-3">Items</h3>
             <div className="space-y-2">
               {order.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3 bg-gray-800/30 rounded-xl">
+                <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
                   <div>
-                    <span className="font-medium text-orange-400">{item.quantity}×</span>
-                    <span className="text-white ml-2">{item.name}</span>
+                    <span className="font-medium text-pink-500">{item.quantity}×</span>
+                    <span className="text-gray-900 ml-2">{item.name}</span>
                   </div>
-                  <span className="text-white font-semibold">{item.total.toFixed(2)} AED</span>
+                  <span className="text-gray-900 font-semibold">{item.total.toFixed(2)} CAD</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Totals */}
-          <div className="bg-gray-800/50 rounded-2xl p-4 mb-8">
+          <div className="bg-gray-50 rounded-2xl p-4 mb-8">
             <div className="space-y-2">
-              <div className="flex justify-between text-gray-300">
+              <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span>{order.subtotal.toFixed(2)} AED</span>
+                <span>{order.subtotal.toFixed(2)} CAD</span>
               </div>
               {order.promoDiscount > 0 && (
-                <div className="flex justify-between text-green-400">
+                <div className="flex justify-between text-green-600">
                   <span>Promo Discount</span>
-                  <span>-{order.promoDiscount.toFixed(2)} AED</span>
+                  <span>-{order.promoDiscount.toFixed(2)} CAD</span>
                 </div>
               )}
               {order.pointsDiscount > 0 && (
-                <div className="flex justify-between text-yellow-400">
+                <div className="flex justify-between text-yellow-600">
                   <span>Points Used</span>
-                  <span>-{order.pointsDiscount.toFixed(2)} AED</span>
+                  <span>-{order.pointsDiscount.toFixed(2)} CAD</span>
                 </div>
               )}
-              <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-700">
-                <span className="text-white">Total</span>
-                <span className="text-orange-400">{order.total.toFixed(2)} AED</span>
+              <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
+                <span className="text-gray-900">Total</span>
+                <span className="text-pink-500">{order.total.toFixed(2)} CAD</span>
               </div>
             </div>
           </div>
@@ -217,13 +217,13 @@ const OrderDetails = () => {
           <div className="flex gap-4">
             <button
               onClick={repeatOrder}
-              className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-600 rounded-full font-semibold hover:scale-105 transition"
+              className="flex-1 py-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full font-semibold transition shadow-sm"
             >
               🔄 Repeat Order
             </button>
             <Link
               to="/menu"
-              className="flex-1 py-3 bg-gray-800 rounded-full font-semibold text-center hover:bg-gray-700 transition"
+              className="flex-1 py-3 border-2 border-pink-300 text-pink-500 rounded-full font-semibold text-center hover:bg-pink-50 transition"
             >
               🍣 Browse Menu
             </Link>
