@@ -36,6 +36,13 @@ interface Order {
   createdAt: string;
 }
 
+const RED = '#DC2626';
+const RED_DIM = '#FCA5A5';
+const RED_BG = '#FEF2F2';
+const DARK = '#111827';
+const MUTED = '#6B7280';
+const WHITE = '#FFFFFF';
+
 const OrderDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
@@ -88,14 +95,14 @@ const OrderDetails = () => {
     window.location.href = '/cart';
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-700';
-      case 'preparing': return 'bg-blue-100 text-blue-700';
-      case 'delivering': return 'bg-purple-100 text-purple-700';
-      case 'delivered': return 'bg-green-100 text-green-700';
-      case 'cancelled': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'pending': return { bg: '#FEF3C7', text: '#D97706', border: '#FDE68A' };
+      case 'preparing': return { bg: '#DBEAFE', text: '#2563EB', border: '#BFDBFE' };
+      case 'delivering': return { bg: '#EDE9FE', text: '#7C3AED', border: '#DDD6FE' };
+      case 'delivered': return { bg: '#D1FAE5', text: '#059669', border: '#A7F3D0' };
+      case 'cancelled': return { bg: '#FEE2E2', text: '#DC2626', border: '#FECACA' };
+      default: return { bg: '#F3F4F6', text: '#6B7280', border: '#E5E7EB' };
     }
   };
 
@@ -112,119 +119,321 @@ const OrderDetails = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <div className="text-4xl mb-4 animate-pulse">🍣</div>
-        <p className="text-gray-500">Loading order details...</p>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: WHITE }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🍣</div>
+          <p style={{ color: MUTED, fontFamily: "'DM Sans', sans-serif" }}>Loading order details...</p>
+        </div>
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-4xl font-bold mb-8 text-gray-900">Order Not Found</h1>
-        <Link to="/orders" className="text-pink-500 hover:text-pink-600">
+      <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: WHITE, gap: '20px' }}>
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '2.5rem', fontWeight: 700, color: DARK }}>
+          Order Not Found
+        </h1>
+        <Link to="/orders" style={{
+          color: RED,
+          fontSize: '0.9rem',
+          fontWeight: 600,
+          fontFamily: "'DM Sans', sans-serif",
+          textDecoration: 'none',
+        }}>
           ← Back to Orders
         </Link>
       </div>
     );
   }
 
+  const statusStyle = getStatusStyle(order.status);
+
   return (
-    <div className="container mx-auto px-4 py-16">
-      <div className="max-w-4xl mx-auto">
-        <Link to="/orders" className="text-pink-500 hover:text-pink-600 mb-6 inline-block">
+    <div style={{ minHeight: '100vh', background: '#F9FAFB', padding: '40px 24px 80px' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+
+        {/* Back link */}
+        <Link to="/orders" style={{
+          display: 'inline-block',
+          color: RED,
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          fontFamily: "'DM Sans', sans-serif",
+          textDecoration: 'none',
+          marginBottom: '28px',
+          transition: 'color 0.2s',
+        }}>
           ← Back to Orders
         </Link>
 
-        <div className="bg-white border border-pink-200 rounded-2xl p-8 shadow-sm">
+        {/* Main Card */}
+        <div style={{
+          background: WHITE,
+          border: '1px solid #FEE2E2',
+          borderRadius: '20px',
+          padding: '40px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+        }}>
           {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-pink-100">
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: '28px',
+            paddingBottom: '24px',
+            borderBottom: '2px solid #FEE2E2',
+            flexWrap: 'wrap',
+            gap: '16px',
+          }}>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Order #{order.orderId}</h1>
-              <p className="text-gray-500 text-sm mt-1">
-                Placed on {new Date(order.createdAt).toLocaleString()}
+              <h1 style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: '2rem',
+                fontWeight: 700,
+                color: DARK,
+                marginBottom: '6px',
+              }}>
+                Order #{order.orderId}
+              </h1>
+              <p style={{
+                fontSize: '0.85rem',
+                color: MUTED,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                {new Date(order.createdAt).toLocaleString()}
               </p>
             </div>
-            <div className={`px-4 py-1 rounded-full text-sm font-semibold mt-2 md:mt-0 ${getStatusColor(order.status)}`}>
+            <span style={{
+              padding: '8px 20px',
+              borderRadius: '50px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              fontFamily: "'DM Sans', sans-serif",
+              background: statusStyle.bg,
+              color: statusStyle.text,
+              border: `1px solid ${statusStyle.border}`,
+            }}>
               {getStatusText(order.status)}
-            </div>
+            </span>
           </div>
 
-          {/* Customer Info */}
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-gray-50 rounded-2xl p-4">
-              <h3 className="text-lg font-semibold text-pink-500 mb-3">Customer Info</h3>
-              <p className="text-gray-900">👤 {order.customer.name}</p>
-              <p className="text-gray-600 mt-1">📞 {order.customer.phone}</p>
-              {order.customer.email && order.customer.email !== 'Not provided' && (
-                <p className="text-gray-600 mt-1">✉️ {order.customer.email}</p>
-              )}
+          {/* Customer & Delivery Info */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '24px',
+            marginBottom: '32px',
+          }}>
+            <div style={{
+              background: RED_BG,
+              borderRadius: '14px',
+              padding: '24px',
+              border: '1px solid #FEE2E2',
+            }}>
+              <h3 style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: '1.3rem',
+                fontWeight: 700,
+                color: RED,
+                marginBottom: '16px',
+              }}>
+                Customer Info
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ color: DARK, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif" }}>
+                  👤 {order.customer.name}
+                </p>
+                <p style={{ color: MUTED, fontSize: '0.88rem', fontFamily: "'DM Sans', sans-serif" }}>
+                  📞 {order.customer.phone}
+                </p>
+                {order.customer.email && order.customer.email !== 'Not provided' && (
+                  <p style={{ color: MUTED, fontSize: '0.88rem', fontFamily: "'DM Sans', sans-serif" }}>
+                    ✉️ {order.customer.email}
+                  </p>
+                )}
+              </div>
             </div>
 
-            <div className="bg-gray-50 rounded-2xl p-4">
-              <h3 className="text-lg font-semibold text-pink-500 mb-3">Delivery Address</h3>
-              <p className="text-gray-900">📍 {order.delivery.fullAddress}</p>
+            <div style={{
+              background: RED_BG,
+              borderRadius: '14px',
+              padding: '24px',
+              border: '1px solid #FEE2E2',
+            }}>
+              <h3 style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: '1.3rem',
+                fontWeight: 700,
+                color: RED,
+                marginBottom: '16px',
+              }}>
+                Delivery Address
+              </h3>
+              <p style={{ color: DARK, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6 }}>
+                📍 {order.delivery.fullAddress}
+              </p>
               {order.delivery.specialInstructions && (
-                <p className="text-gray-500 text-sm mt-2">📝 {order.delivery.specialInstructions}</p>
+                <p style={{
+                  color: MUTED,
+                  fontSize: '0.84rem',
+                  fontFamily: "'DM Sans', sans-serif",
+                  marginTop: '10px',
+                  lineHeight: 1.5,
+                }}>
+                  📝 {order.delivery.specialInstructions}
+                </p>
               )}
             </div>
           </div>
 
           {/* Items */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-pink-500 mb-3">Items</h3>
-            <div className="space-y-2">
+          <div style={{ marginBottom: '32px' }}>
+            <h3 style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: '1.4rem',
+              fontWeight: 700,
+              color: DARK,
+              marginBottom: '16px',
+            }}>
+              Items
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {order.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                <div key={idx} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px 20px',
+                  background: '#F9FAFB',
+                  borderRadius: '12px',
+                  border: '1px solid #FEE2E2',
+                }}>
                   <div>
-                    <span className="font-medium text-pink-500">{item.quantity}×</span>
-                    <span className="text-gray-900 ml-2">{item.name}</span>
+                    <span style={{ fontWeight: 700, color: RED, fontSize: '0.95rem' }}>
+                      {item.quantity}×{' '}
+                    </span>
+                    <span style={{ color: DARK, fontSize: '0.95rem', fontFamily: "'DM Sans', sans-serif" }}>
+                      {item.name}
+                    </span>
                   </div>
-                  <span className="text-gray-900 font-semibold">{item.total.toFixed(2)} CAD</span>
+                  <span style={{
+                    fontWeight: 700,
+                    color: DARK,
+                    fontSize: '0.95rem',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                    {item.total.toFixed(2)} CAD
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Totals */}
-          <div className="bg-gray-50 rounded-2xl p-4 mb-8">
-            <div className="space-y-2">
-              <div className="flex justify-between text-gray-600">
-                <span>Subtotal</span>
-                <span>{order.subtotal.toFixed(2)} CAD</span>
+          <div style={{
+            background: RED_BG,
+            borderRadius: '14px',
+            padding: '24px',
+            marginBottom: '32px',
+            border: '1px solid #FEE2E2',
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: MUTED, fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif" }}>Subtotal</span>
+                <span style={{ color: DARK, fontSize: '0.9rem', fontWeight: 600 }}>{order.subtotal.toFixed(2)} CAD</span>
               </div>
               {order.promoDiscount > 0 && (
-                <div className="flex justify-between text-green-600">
-                  <span>Promo Discount</span>
-                  <span>-{order.promoDiscount.toFixed(2)} CAD</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#059669', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif" }}>Promo Discount</span>
+                  <span style={{ color: '#059669', fontSize: '0.9rem', fontWeight: 600 }}>-{order.promoDiscount.toFixed(2)} CAD</span>
                 </div>
               )}
               {order.pointsDiscount > 0 && (
-                <div className="flex justify-between text-yellow-600">
-                  <span>Points Used</span>
-                  <span>-{order.pointsDiscount.toFixed(2)} CAD</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#D97706', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif" }}>Points Used</span>
+                  <span style={{ color: '#D97706', fontSize: '0.9rem', fontWeight: 600 }}>-{order.pointsDiscount.toFixed(2)} CAD</span>
                 </div>
               )}
-              <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
-                <span className="text-gray-900">Total</span>
-                <span className="text-pink-500">{order.total.toFixed(2)} CAD</span>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                paddingTop: '14px',
+                borderTop: '2px solid #FCA5A5',
+                marginTop: '4px',
+              }}>
+                <span style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  fontSize: '1.3rem',
+                  fontWeight: 700,
+                  color: DARK,
+                }}>Total</span>
+                <span style={{
+                  fontFamily: "'Cormorant Garamond', serif",
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                  color: RED,
+                }}>{order.total.toFixed(2)} CAD</span>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4">
+          <div style={{ display: 'flex', gap: '16px' }}>
             <button
               onClick={repeatOrder}
-              className="flex-1 py-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full font-semibold transition shadow-sm"
-            >
+              style={{
+                flex: 1,
+                padding: '16px',
+                background: RED,
+                color: '#fff',
+                border: 'none',
+                borderRadius: '50px',
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                letterSpacing: '1.5px',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 20px rgba(220,38,38,0.3)',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = '#EF4444';
+                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = RED;
+                (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+              }}>
               🔄 Repeat Order
             </button>
             <Link
               to="/menu"
-              className="flex-1 py-3 border-2 border-pink-300 text-pink-500 rounded-full font-semibold text-center hover:bg-pink-50 transition"
-            >
+              style={{
+                flex: 1,
+                padding: '16px',
+                background: 'transparent',
+                border: `2px solid ${RED_DIM}`,
+                color: RED,
+                borderRadius: '50px',
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                letterSpacing: '1.5px',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+                textAlign: 'center',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = RED_BG;
+                (e.currentTarget as HTMLElement).style.borderColor = RED;
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'transparent';
+                (e.currentTarget as HTMLElement).style.borderColor = RED_DIM;
+              }}>
               🍣 Browse Menu
             </Link>
           </div>
