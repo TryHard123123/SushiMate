@@ -1,8 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
 import { Product } from '../context/CartContext';
-import { useIsMobile } from '../hooks/useIsMobile';
 import ToastNotification from '../components/ToastNotification';
 
 const RED = '#DC2626';
@@ -25,14 +24,12 @@ const categories = [
 
 const OrderPage: React.FC<OrderPageProps> = ({ onOpenModal }) => {
   const { state, lastAddedItem, clearLastAdded } = useCart();
-  const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const products = state.products || [];
 
-  // Фильтрация
   const filtered = products
     .filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -45,13 +42,13 @@ const OrderPage: React.FC<OrderPageProps> = ({ onOpenModal }) => {
       return order.indexOf(a.category) - order.indexOf(b.category);
     });
 
-  // Группировка по категориям
   const groupedProducts = categories
-    .filter(cat => filtered.some(p => p.category === cat.id))
+    .filter(cat => filtered.some(p => p.category === cat.id) || (activeCategory !== 'all' && cat.id === activeCategory))
     .map(cat => ({
       ...cat,
       products: filtered.filter(p => p.category === cat.id),
-    }));
+    }))
+    .filter(cat => cat.products.length > 0 || activeCategory !== 'all');
 
   const scrollToCategory = (catId: string) => {
     setActiveCategory(catId);
@@ -61,7 +58,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ onOpenModal }) => {
     }
     const el = sectionRefs.current[catId];
     if (el) {
-      const top = el.getBoundingClientRect().top + window.pageYOffset - 140;
+      const top = el.getBoundingClientRect().top + window.pageYOffset - 150;
       window.scrollTo({ top, behavior: 'smooth' });
     }
   };
@@ -82,7 +79,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ onOpenModal }) => {
 
   return (
     <div style={{ minHeight: '100vh', background: WHITE }}>
-      {/* Toast Notification */}
       {lastAddedItem && (
         <ToastNotification message={lastAddedItem} onClose={clearLastAdded} />
       )}
@@ -90,10 +86,10 @@ const OrderPage: React.FC<OrderPageProps> = ({ onOpenModal }) => {
       {/* Поиск */}
       <div style={{
         background: WHITE,
-        padding: '24px 40px',
+        padding: '16px 16px 12px',
         borderBottom: '1px solid #FEE2E2',
         position: 'sticky',
-        top: '80px',
+        top: '0',
         zIndex: 40,
       }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative' }}>
@@ -101,14 +97,14 @@ const OrderPage: React.FC<OrderPageProps> = ({ onOpenModal }) => {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="🔍 Search sushi, rolls, sets, drinks..."
+            placeholder="🔍 Search sushi, rolls, sets..."
             style={{
               width: '100%',
-              padding: '16px 24px 16px 52px',
+              padding: '12px 16px 12px 40px',
               background: RED_BG,
               border: `2px solid ${RED_DIM}`,
-              borderRadius: '16px',
-              fontSize: '1rem',
+              borderRadius: '12px',
+              fontSize: '0.9rem',
               fontFamily: "'DM Sans', sans-serif",
               color: DARK,
               outline: 'none',
@@ -125,50 +121,46 @@ const OrderPage: React.FC<OrderPageProps> = ({ onOpenModal }) => {
           />
           <span style={{
             position: 'absolute',
-            left: '20px',
+            left: '14px',
             top: '50%',
             transform: 'translateY(-50%)',
-            fontSize: '1.2rem',
-          }}>
-            🔍
-          </span>
+            fontSize: '1rem',
+            opacity: 0.5,
+          }}>🔍</span>
         </div>
       </div>
 
       {/* Категории */}
       <div style={{
         position: 'sticky',
-        top: '140px',
+        top: '56px',
         zIndex: 39,
         background: WHITE,
         borderBottom: '1px solid #FEE2E2',
-        padding: '12px 0',
+        padding: '8px 0',
         overflowX: 'auto',
       }}>
         <div style={{
           maxWidth: '1280px',
           margin: '0 auto',
-          padding: '0 40px',
+          padding: '0 16px',
           display: 'flex',
-          gap: '10px',
+          gap: '8px',
         }}>
-          {[
-            { id: 'all', name: 'ALL', icon: '🍽️' },
-            ...categories.filter(cat => products.some(p => p.category === cat.id)),
-          ].map(cat => (
+          {[{ id: 'all', name: 'ALL', icon: '🍽️' }, ...categories].map(cat => (
             <button
               key={cat.id}
               onClick={() => scrollToCategory(cat.id)}
               style={{
-                padding: '10px 22px',
+                padding: '8px 16px',
                 borderRadius: '50px',
-                border: activeCategory === cat.id ? 'none' : `2px solid ${RED_DIM}`,
+                border: activeCategory === cat.id ? 'none' : `1.5px solid ${RED_DIM}`,
                 background: activeCategory === cat.id ? RED : 'transparent',
                 color: activeCategory === cat.id ? '#fff' : MUTED,
                 fontFamily: "'DM Sans', sans-serif",
                 fontWeight: 700,
-                fontSize: '0.7rem',
-                letterSpacing: '2px',
+                fontSize: '0.65rem',
+                letterSpacing: '1.5px',
                 textTransform: 'uppercase',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
@@ -180,53 +172,52 @@ const OrderPage: React.FC<OrderPageProps> = ({ onOpenModal }) => {
         </div>
       </div>
 
-      {/* Результаты */}
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '40px' }}>
+      {/* Контент */}
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px' }}>
         {filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '16px' }}>🔍</div>
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🔍</div>
             <h3 style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: '2rem', color: DARK, marginBottom: '12px',
+              fontSize: '1.5rem', color: DARK, marginBottom: '12px',
             }}>
               Nothing found
             </h3>
             <button onClick={() => { setSearch(''); setActiveCategory('all'); }} style={{
               background: RED, color: '#fff', border: 'none',
-              padding: '12px 32px', borderRadius: '50px',
+              padding: '10px 24px', borderRadius: '50px',
               fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
-              fontSize: '0.8rem', letterSpacing: '2px', textTransform: 'uppercase',
+              fontSize: '0.75rem', letterSpacing: '1.5px', textTransform: 'uppercase',
               cursor: 'pointer',
             }}>
               Clear Filters
             </button>
           </div>
-        ) : activeCategory === 'all' && !search ? (
-          // Группировка по категориям
+        ) : (
           groupedProducts.map(cat => (
             <div
               key={cat.id}
               ref={el => { sectionRefs.current[cat.id] = el; }}
-              style={{ marginBottom: '56px' }}
+              style={{ marginBottom: '32px' }}
             >
               <h2 style={{
                 fontFamily: "'Cormorant Garamond', serif",
-                fontSize: '2rem',
+                fontSize: '1.5rem',
                 fontWeight: 700,
                 color: DARK,
-                marginBottom: '24px',
-                paddingBottom: '12px',
-                borderBottom: '3px solid #DC2626',
+                marginBottom: '16px',
+                paddingBottom: '8px',
+                borderBottom: '2px solid #DC2626',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '8px',
               }}>
                 <span>{cat.icon}</span> {cat.name}
               </h2>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: '24px',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                gap: '10px',
               }}>
                 {cat.products.map(p => (
                   <ProductCard
@@ -238,31 +229,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ onOpenModal }) => {
               </div>
             </div>
           ))
-        ) : (
-          // Отфильтрованные товары
-          <div>
-            <p style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: '0.85rem',
-              color: MUTED,
-              marginBottom: '28px',
-            }}>
-              {filtered.length} {filtered.length === 1 ? 'item' : 'items'} found
-            </p>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '24px',
-            }}>
-              {filtered.map(p => (
-                <ProductCard
-                  key={p._id || p.id}
-                  product={p}
-                  onOpenModal={onOpenModal}
-                />
-              ))}
-            </div>
-          </div>
         )}
       </div>
     </div>

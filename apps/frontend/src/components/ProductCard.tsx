@@ -1,18 +1,16 @@
 import { useState } from 'react';
 import { Product } from '../context/CartContext';
 import { useCart } from '../context/CartContext';
-import { useIsMobile } from '../hooks/useIsMobile';
 
 interface ProductCardProps {
   product: Product;
   onOpenModal: (product: Product) => void;
   onAddToCart?: (productName: string) => void;
-  mode?: 'view' | 'order'; // ← новый пропс
+  mode?: 'view' | 'order';
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenModal, onAddToCart, mode = 'order' }) => {
   const { state, dispatch } = useCart();
-  const isMobile = useIsMobile();
   const [imageError, setImageError] = useState(false);
   const [hover, setHover] = useState(false);
   const [anim, setAnim] = useState(false);
@@ -22,12 +20,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenModal, onAddTo
   const isViewMode = mode === 'view';
 
   const inc = () => {
-    if (isViewMode) return; // Не добавляем в режиме просмотра
+    if (isViewMode) return;
     if (qty === 0) {
       dispatch({ type: 'ADD_ITEM', payload: { ...product, id: productId } });
       onAddToCart?.(product.name);
+    } else if (qty < 10) {
+      dispatch({ type: 'UPDATE_QUANTITY', payload: { id: productId, quantity: qty + 1 } });
     }
-    else if (qty < 10) dispatch({ type: 'UPDATE_QUANTITY', payload: { id: productId, quantity: qty + 1 } });
     setAnim(true);
     setTimeout(() => setAnim(false), 240);
   };
@@ -45,73 +44,75 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenModal, onAddTo
   return (
     <div
       onClick={clickCard}
-      onMouseEnter={() => setHover(true)}
+      onMouseEnter={() => !isMobile() && setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
         background: '#FFFFFF',
-        border: `2px solid ${hover ? '#DC2626' : '#FEE2E2'}`,
-        borderRadius: '16px',
+        border: `1px solid ${hover ? '#DC2626' : '#FEE2E2'}`,
+        borderRadius: '12px',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
         position: 'relative',
-        transition: 'all 0.3s ease',
-        transform: hover ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: hover ? '0 12px 40px rgba(220,38,38,0.12)' : '0 2px 8px rgba(0,0,0,0.04)',
+        transition: 'all 0.25s ease',
+        transform: hover ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: hover ? '0 6px 24px rgba(220,38,38,0.1)' : '0 1px 4px rgba(0,0,0,0.04)',
+        maxWidth: '100%',
       }}
     >
       {product.isHit && (
         <div style={{
-          position: 'absolute', top: '10px', left: '10px', zIndex: 10,
+          position: 'absolute', top: '6px', left: '6px', zIndex: 10,
           background: '#DC2626', color: '#fff',
           fontFamily: "'DM Sans', sans-serif",
-          fontSize: '0.56rem', fontWeight: 800,
-          letterSpacing: '2.5px', textTransform: 'uppercase',
-          padding: '4px 10px', borderRadius: '20px',
-          boxShadow: '0 2px 8px rgba(220,38,38,0.3)',
+          fontSize: '0.45rem', fontWeight: 800,
+          letterSpacing: '1.5px', textTransform: 'uppercase',
+          padding: '2px 6px', borderRadius: '20px',
         }}>
-          BEST SELLER
+          BEST
         </div>
       )}
 
+      {/* Image */}
       <div style={{
-        height: isMobile ? '160px' : '200px',
-        overflow: 'hidden', background: '#FEF2F2',
-        flexShrink: 0, position: 'relative',
+        height: '150px',
+        overflow: 'hidden',
+        background: '#FEF2F2',
+        flexShrink: 0,
+        position: 'relative',
       }}>
         {!imageError && product.image ? (
           <img
             src={product.image}
             alt={product.name}
             style={{
-              width: '100%', height: '100%', objectFit: 'cover',
-              transition: 'transform 0.5s ease',
-              transform: hover ? 'scale(1.08)' : 'scale(1)',
+              width: '100%', height: '100%',
+              objectFit: 'cover',
+              transition: 'transform 0.4s ease',
+              transform: hover ? 'scale(1.05)' : 'scale(1)',
             }}
             onError={() => setImageError(true)}
           />
         ) : (
           <div style={{
-            height: '100%', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', fontSize: '2.5rem', color: '#FCA5A5',
+            height: '100%', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            fontSize: '2rem', color: '#FCA5A5',
           }}>🍣</div>
         )}
       </div>
 
+      {/* Content */}
       <div style={{
-        padding: isMobile ? '12px' : '16px',
-        display: 'flex', flexDirection: 'column', flex: 1, gap: '6px',
+        padding: '10px 12px 12px',
+        display: 'flex', flexDirection: 'column',
+        flex: 1, gap: '3px',
       }}>
         {product.rating && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-            {[1,2,3,4,5].map(s => (
-              <span key={s} style={{
-                fontSize: '0.7rem',
-                color: s <= Math.floor(product.rating!) ? '#FBBF24' : '#E5E7EB',
-              }}>★</span>
-            ))}
-            <span style={{ fontSize: '0.7rem', color: '#6B7280', marginLeft: '4px', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.6rem', color: '#FBBF24' }}>★</span>
+            <span style={{ fontSize: '0.6rem', color: '#6B7280', fontWeight: 600 }}>
               {product.rating}
             </span>
           </div>
@@ -119,72 +120,87 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenModal, onAddTo
 
         <h3 style={{
           fontFamily: "'Cormorant Garamond', serif",
-          fontSize: isMobile ? '1rem' : '1.15rem',
-          fontWeight: 700, color: '#111827', lineHeight: 1.25,
+          fontSize: '0.9rem',
+          fontWeight: 700,
+          color: '#111827',
+          lineHeight: 1.2,
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
         }}>
           {product.name}
         </h3>
 
         <p style={{
-          fontSize: '0.78rem', color: '#6B7280', lineHeight: 1.5, flex: 1,
+          fontSize: '0.7rem',
+          color: '#6B7280',
+          lineHeight: 1.3,
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
         }}>
           {product.description}
         </p>
 
-        <div style={{ height: '1px', background: '#FEE2E2', margin: '6px 0' }} />
+        <div style={{ height: '1px', background: '#FEE2E2', margin: '2px 0' }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
           <div>
             <span style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: '1.3rem', fontWeight: 700, color: '#DC2626',
+              fontSize: '1.1rem', fontWeight: 700, color: '#DC2626',
             }}>
               {product.price}
             </span>
             <span style={{
-              fontSize: '0.72rem', color: '#6B7280', marginLeft: '4px',
-              fontFamily: "'DM Sans', sans-serif",
+              fontSize: '0.6rem', color: '#6B7280',
+              marginLeft: '2px', fontFamily: "'DM Sans', sans-serif",
             }}>
               CAD
             </span>
           </div>
 
-          {/* Кнопки +/- только в режиме заказа */}
           {!isViewMode && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <button
-                onClick={e => { e.stopPropagation(); dec(); }}
-                disabled={qty === 0}
-                style={{
-                  width: '30px', height: '30px', borderRadius: '50%',
-                  border: `2px solid ${qty === 0 ? '#FCA5A5' : '#DC2626'}`,
-                  background: 'transparent',
-                  color: qty === 0 ? '#FCA5A5' : '#DC2626',
-                  fontWeight: 700, fontSize: '1rem',
-                  cursor: qty === 0 ? 'not-allowed' : 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                −
-              </button>
-              <span style={{
-                minWidth: '18px', textAlign: 'center',
-                fontWeight: 700, fontSize: '0.95rem',
-                color: qty > 0 ? '#DC2626' : '#6B7280',
-                fontFamily: "'DM Sans', sans-serif",
-              }}>
-                {qty}
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {qty > 0 && (
+                <>
+                  <button
+                    onClick={e => { e.stopPropagation(); dec(); }}
+                    style={{
+                      width: '24px', height: '24px', borderRadius: '50%',
+                      border: `1.5px solid #DC2626`,
+                      background: 'transparent',
+                      color: '#DC2626',
+                      fontWeight: 700, fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                    −
+                  </button>
+                  <span style={{
+                    minWidth: '14px', textAlign: 'center',
+                    fontWeight: 700, fontSize: '0.8rem',
+                    color: '#DC2626', fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                    {qty}
+                  </span>
+                </>
+              )}
               <button
                 onClick={e => { e.stopPropagation(); inc(); }}
                 className={anim ? 'animate-bounce' : ''}
                 style={{
-                  width: '30px', height: '30px', borderRadius: '50%',
+                  width: '24px', height: '24px', borderRadius: '50%',
                   border: 'none',
                   background: '#DC2626', color: '#fff',
-                  fontWeight: 700, fontSize: '1rem',
+                  fontWeight: 700, fontSize: '0.8rem',
                   cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(220,38,38,0.3)',
                 }}>
                 +
               </button>
@@ -195,5 +211,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenModal, onAddTo
     </div>
   );
 };
+
+// Хук для проверки мобильного
+function isMobile() {
+  return window.innerWidth < 768;
+}
 
 export default ProductCard;
