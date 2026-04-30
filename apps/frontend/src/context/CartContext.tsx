@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
 
 export interface Product {
   _id?: string | number;
@@ -7,7 +7,7 @@ export interface Product {
   description: string;
   fullDescription?: string;
   price: number;
-  image: string;  // Это поле должно быть строкой с URL
+  image: string;
   images?: string[];
   category: string;
   rating?: number;
@@ -54,27 +54,26 @@ function calculateTotal(items: CartItem[], discountPercent: number): number {
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
-      case 'ADD_ITEM': {
-        // Нормализуем ID товара
-        const normalizedItem = {
-          ...action.payload,
-          id: action.payload.id || Number(action.payload._id) || Date.now()
-        };
-        
-        const existingItem = state.items.find(item => item.id === normalizedItem.id);
-        let newItems;
-        if (existingItem) {
-          newItems = state.items.map(item =>
-            item.id === normalizedItem.id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          );
-        } else {
-          newItems = [...state.items, { ...normalizedItem, quantity: 1 }];
-        }
-        const total = calculateTotal(newItems, state.discountPercent);
-        return { ...state, items: newItems, total };
+    case 'ADD_ITEM': {
+      const normalizedItem = {
+        ...action.payload,
+        id: action.payload.id || Number(action.payload._id) || Date.now()
+      };
+      
+      const existingItem = state.items.find(item => item.id === normalizedItem.id);
+      let newItems;
+      if (existingItem) {
+        newItems = state.items.map(item =>
+          item.id === normalizedItem.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        newItems = [...state.items, { ...normalizedItem, quantity: 1 }];
       }
+      const total = calculateTotal(newItems, state.discountPercent);
+      return { ...state, items: newItems, total };
+    }
     
     case 'REMOVE_ITEM': {
       const newItems = state.items.filter(item => item.id !== action.payload);
@@ -136,14 +135,25 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 interface CartContextType {
   state: CartState;
   dispatch: React.Dispatch<CartAction>;
+  lastAddedItem: string | null;
+  clearLastAdded: () => void;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [lastAddedItem, setLastAddedItem] = useState<string | null>(null);
 
-  // Загрузка корзины из localStorage
+  // Расширяем dispatch для отслеживания добавления
+  const dispatchWithNotification = (action: CartAction) => {
+    dispatch(action);
+    if (action.type === 'ADD_ITEM') {
+      setLastAddedItem(action.payload.name);
+      setTimeout(() => setLastAddedItem(null), 3000);
+    }
+  };
+
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem('sushimate_cart');
@@ -151,7 +161,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const items = JSON.parse(savedCart);
         if (Array.isArray(items) && items.length > 0) {
           dispatch({ type: 'LOAD_CART', payload: items });
-          console.log('✅ Cart loaded from localStorage:', items.length, 'items');
         }
       }
       
@@ -167,7 +176,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  // Сохранение корзины
   useEffect(() => {
     try {
       localStorage.setItem('sushimate_cart', JSON.stringify(state.items));
@@ -176,7 +184,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [state.items]);
 
-  // Сохранение промокода
   useEffect(() => {
     try {
       localStorage.setItem('sushimate_promo', JSON.stringify({ 
@@ -188,8 +195,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [state.appliedPromo, state.discountPercent]);
 
+  const clearLastAdded = () => setLastAddedItem(null);
+
   return (
-    <CartContext.Provider value={{ state, dispatch }}>
+    <CartContext.Provider value={{ state, dispatch: dispatchWithNotification, lastAddedItem, clearLastAdded }}>
       {children}
     </CartContext.Provider>
   );

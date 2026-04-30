@@ -2,8 +2,6 @@ import { Link } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
 
 const RED = '#DC2626';
-const RED_DIM = '#FCA5A5';
-const MUTED = '#6B7280';
 const FAINT = '#9CA3AF';
 
 const Footer = () => {

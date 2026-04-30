@@ -363,6 +363,19 @@ const Checkout = () => {
     }
   }, []);
 
+useEffect(() => {
+  const savedMethod = localStorage.getItem('sushimate_delivery_method');
+  const savedAddress = localStorage.getItem('sushimate_delivery_address');
+  
+  if (savedAddress) {
+    // Если адрес сохранён — подставляем его
+    if (savedMethod === 'delivery') {
+      setFormData(prev => ({ ...prev, address: savedAddress }));
+    }
+    // Для pickup тоже можно подставить
+  }
+}, []);
+
   const subtotal = state.items.reduce((s, i) => s + i.price * i.quantity, 0);
   const promoDisc = subtotal * (state.discountPercent / 100) || 0;
   const delivery = subtotal >= FREE_THRESHOLD ? 0 : DELIVERY_FEE;

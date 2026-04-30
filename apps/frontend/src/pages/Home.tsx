@@ -8,7 +8,6 @@ import { useIsMobile } from '../hooks/useIsMobile';
 interface HomeProps { onOpenModal: (product: Product) => void; }
 
 const RED = '#DC2626';
-const RED_DIM = '#FCA5A5';
 const RED_BG = '#FEF2F2';
 const WHITE = '#FFFFFF';
 const DARK = '#111827';

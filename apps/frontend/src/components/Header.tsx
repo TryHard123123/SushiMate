@@ -1,21 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShoppingCart, faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faShoppingCart, faBars, faTimes, faMapMarkerAlt, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useCart } from '../context/CartContext';
-
-const navLinks = [
-  { to: '/',        label: 'HOME',    icon: '🏠' },
-  { to: '/menu',    label: 'MENU',    icon: '🍣' },
-  { to: '/orders',  label: 'ORDERS',  icon: '📦' },
-  { to: '/profile', label: 'PROFILE', icon: '👤' },
-];
+import DeliveryModal from './DeliveryModal';
 
 const RED = '#DC2626';
 const RED_DIM = '#FCA5A5';
+const RED_BG = '#FEF2F2';
 const BG = '#FFFFFF';
 const BORDER = '#FEE2E2';
 const MUTED = '#6B7280';
+const DARK = '#111827';
 
 const Header = () => {
   const { state } = useCart();
@@ -23,7 +19,15 @@ const Header = () => {
   const [open, setOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const itemCount = state.items.reduce((sum, i) => sum + i.quantity, 0);
+
+  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup' | null>(
+    () => localStorage.getItem('sushimate_delivery_method') as 'delivery' | 'pickup' | null
+  );
+  const [deliveryAddress, setDeliveryAddress] = useState(
+    () => localStorage.getItem('sushimate_delivery_address') || ''
+  );
 
   useEffect(() => {
     const check = () => setMobile(window.innerWidth < 768);
@@ -40,6 +44,30 @@ const Header = () => {
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
+  const handleDeliveryMethodSelect = (method: 'delivery' | 'pickup', address?: string) => {
+    setDeliveryMethod(method);
+    if (address) {
+      setDeliveryAddress(address);
+      localStorage.setItem('sushimate_delivery_address', address);
+    }
+    localStorage.setItem('sushimate_delivery_method', method);
+    setDeliveryModalOpen(false);
+  };
+
+  const getDeliveryLabel = () => {
+    if (!deliveryMethod) return null;
+    if (deliveryMethod === 'delivery') {
+      const short = deliveryAddress.length > 35 
+        ? deliveryAddress.slice(0, 32) + '...'
+        : deliveryAddress;
+      return `🚗 Delivery to: ${short || 'Address set'}`;
+    }
+    const short = deliveryAddress.length > 35 
+      ? deliveryAddress.slice(0, 32) + '...'
+      : deliveryAddress;
+    return `🏪 Pickup: ${short || 'Location selected'}`;
+  };
+
   return (
     <>
       <header style={{
@@ -49,13 +77,43 @@ const Header = () => {
         transition: 'box-shadow 0.3s, border-color 0.3s',
         boxShadow: scrolled ? '0 2px 20px rgba(220,38,38,0.08)' : 'none',
       }}>
+        {/* Топ-бар с выбранным методом доставки */}
+        {deliveryMethod && (
+          <div
+            onClick={() => setDeliveryModalOpen(true)}
+            style={{
+              background: RED_BG,
+              borderBottom: `1px solid ${BORDER}`,
+              padding: '10px 0',
+              cursor: 'pointer',
+            }}>
+            <div style={{
+              maxWidth: '1280px', margin: '0 auto', padding: '0 40px',
+              display: 'flex', justifyContent: 'center', alignItems: 'center',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                color: RED,
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: '0.82rem',
+                fontWeight: 600,
+              }}>
+                <FontAwesomeIcon icon={faMapMarkerAlt} />
+                <span>{getDeliveryLabel()}</span>
+                <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: '0.6rem', opacity: 0.6 }} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Основной хедер */}
         <div style={{
           maxWidth: '1280px', margin: '0 auto',
           padding: mobile ? '0 20px' : '0 40px',
-          height: mobile ? '64px' : '80px',
+          height: mobile ? '64px' : '76px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          {/* Logo */}
+          {/* Логотип */}
           <Link to="/" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', textDecoration: 'none' }}>
             <span style={{
               fontFamily: "'Cormorant Garamond', serif",
@@ -64,54 +122,106 @@ const Header = () => {
             }}>木</span>
             <span style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: mobile ? '2rem' : '2.8rem',
-              fontWeight: 700, color: '#111827', letterSpacing: '2px',
+              fontSize: mobile ? '2rem' : '2.6rem',
+              fontWeight: 700, color: DARK, letterSpacing: '2px',
             }}>SushiMate</span>
           </Link>
 
-          {/* Desktop Nav */}
+          {/* Десктопная навигация */}
           {!mobile && (
-            <nav style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-              {navLinks.map(link => {
-                const active = location.pathname === link.to;
-                return (
-                  <Link key={link.to} to={link.to} style={{
+            <nav style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+              
+              {/* ===== ВОТ СЮДА ВСТАВЛЯТЬ КНОПКУ ORDER ONLINE ===== */}
+              {deliveryMethod ? (
+                // Если метод уже выбран — сразу переходим на страницу заказа
+                <Link to="/order" style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontWeight: 700, fontSize: '0.78rem', letterSpacing: '3px',
+                  color: '#FFFFFF',
+                  background: RED,
+                  border: 'none',
+                  padding: '14px 28px',
+                  borderRadius: '50px',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 20px rgba(220,38,38,0.35)',
+                  textTransform: 'uppercase',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.background = '#EF4444';
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.background = RED;
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                }}>
+                  ORDER ONLINE
+                </Link>
+              ) : (
+                // Если метод не выбран — открываем окно выбора
+                <button
+                  onClick={() => setDeliveryModalOpen(true)}
+                  style={{
                     fontFamily: "'DM Sans', sans-serif",
-                    fontWeight: 700, fontSize: '0.7rem', letterSpacing: '3px',
-                    color: active ? RED : MUTED,
-                    textDecoration: 'none', transition: 'all 0.2s',
-                    borderBottom: active ? `2px solid ${RED}` : '2px solid transparent',
-                    paddingBottom: '4px',
+                    fontWeight: 700, fontSize: '0.78rem', letterSpacing: '3px',
+                    color: '#FFFFFF',
+                    background: RED,
+                    border: 'none',
+                    padding: '14px 28px',
+                    borderRadius: '50px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 4px 20px rgba(220,38,38,0.35)',
+                    textTransform: 'uppercase',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = RED; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = active ? RED : MUTED; }}>
-                    {link.label}
-                  </Link>
-                );
-              })}
-              <Link to="/cart" style={{
-                position: 'relative',
-                color: MUTED,
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.background = '#EF4444';
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.background = RED;
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                  }}>
+                  ORDER ONLINE
+                </button>
+              )}
+              {/* ===== КОНЕЦ ВСТАВКИ ===== */}
+
+              <Link to="/orders" style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700, fontSize: '0.72rem', letterSpacing: '3px',
+                color: location.pathname === '/orders' ? RED : MUTED,
                 textDecoration: 'none',
-                padding: '8px',
-                borderRadius: '50%',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = '#FEF2F2';
-                (e.currentTarget as HTMLElement).style.color = RED;
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = 'transparent';
-                (e.currentTarget as HTMLElement).style.color = MUTED;
+                borderBottom: location.pathname === '/orders' ? `2px solid ${RED}` : '2px solid transparent',
+                paddingBottom: '4px', transition: 'all 0.2s',
               }}>
+                ORDERS
+              </Link>
+
+              <Link to="/profile" style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 700, fontSize: '0.72rem', letterSpacing: '3px',
+                color: location.pathname === '/profile' ? RED : MUTED,
+                textDecoration: 'none',
+                borderBottom: location.pathname === '/profile' ? `2px solid ${RED}` : '2px solid transparent',
+                paddingBottom: '4px', transition: 'all 0.2s',
+              }}>
+                PROFILE
+              </Link>
+
+              <Link to="/cart" style={{
+                position: 'relative', color: MUTED, textDecoration: 'none',
+                padding: '8px', borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = RED; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = MUTED; }}>
                 <FontAwesomeIcon icon={faShoppingCart} style={{ fontSize: '1.1rem' }} />
                 {itemCount > 0 && (
                   <span style={{
-                    position: 'absolute', top: '-2px', right: '-2px',
+                    position: 'absolute', top: '-3px', right: '-3px',
                     background: RED, color: '#fff',
                     fontSize: '0.6rem', fontWeight: 800,
                     borderRadius: '999px', padding: '2px 6px',
@@ -123,15 +233,10 @@ const Header = () => {
             </nav>
           )}
 
-          {/* Mobile right side */}
+          {/* Мобильная правая часть */}
           {mobile && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <Link to="/cart" style={{
-                position: 'relative',
-                color: MUTED,
-                textDecoration: 'none',
-                padding: '6px',
-              }}>
+              <Link to="/cart" style={{ position: 'relative', color: MUTED, textDecoration: 'none', padding: '6px' }}>
                 <FontAwesomeIcon icon={faShoppingCart} style={{ fontSize: '1.2rem' }} />
                 {itemCount > 0 && (
                   <span style={{
@@ -147,72 +252,77 @@ const Header = () => {
                 onClick={() => setOpen(o => !o)}
                 style={{
                   background: 'none', border: 'none', cursor: 'pointer',
-                  color: open ? RED : MUTED, fontSize: '1.4rem',
-                  padding: '6px', transition: 'color 0.2s',
-                }}
-                aria-label="Menu">
+                  color: open ? RED : MUTED, fontSize: '1.4rem', padding: '6px',
+                }}>
                 <FontAwesomeIcon icon={open ? faTimes : faBars} />
               </button>
             </div>
           )}
         </div>
 
-        {/* Mobile dropdown */}
+        {/* Мобильное меню */}
         {mobile && (
           <div style={{
             overflow: 'hidden',
-            maxHeight: open ? '400px' : '0',
+            maxHeight: open ? '350px' : '0',
             transition: 'max-height 0.4s cubic-bezier(0.4,0,0.2,1)',
-            background: '#FEF2F2',
+            background: RED_BG,
             borderTop: open ? `1px solid ${BORDER}` : 'none',
           }}>
             <nav style={{ padding: '8px 0' }}>
-              {navLinks.map(link => {
-                const active = location.pathname === link.to;
-                return (
-                  <Link key={link.to} to={link.to} style={{
+              {deliveryMethod ? (
+                <Link to="/order" style={{
+                  display: 'flex', alignItems: 'center', gap: '16px',
+                  padding: '16px 24px',
+                  background: RED, color: '#fff',
+                  textDecoration: 'none',
+                  fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+                  fontSize: '0.85rem', letterSpacing: '2px',
+                }}>
+                  <span>🛵</span> ORDER ONLINE
+                </Link>
+              ) : (
+                <button
+                  onClick={() => { setDeliveryModalOpen(true); setOpen(false); }}
+                  style={{
                     display: 'flex', alignItems: 'center', gap: '16px',
                     padding: '16px 24px',
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontWeight: 700, fontSize: '0.85rem', letterSpacing: '2px',
-                    color: active ? RED : MUTED,
-                    textDecoration: 'none',
-                    borderLeft: active ? `3px solid ${RED}` : '3px solid transparent',
-                    transition: 'all 0.15s',
-                    background: active ? 'rgba(220,38,38,0.05)' : 'transparent',
-                  }}>
-                    <span style={{ fontSize: '1.1rem' }}>{link.icon}</span>
-                    {link.label}
-                  </Link>
-                );
-              })}
-              <Link to="/cart" style={{
-                display: 'flex', alignItems: 'center', gap: '16px',
-                padding: '16px 24px',
-                fontFamily: "'DM Sans', sans-serif",
-                fontWeight: 700, fontSize: '0.85rem', letterSpacing: '2px',
-                color: MUTED, textDecoration: 'none',
-                borderLeft: '3px solid transparent',
-              }}>
-                <span style={{ fontSize: '1.1rem' }}>🛒</span>
-                CART {itemCount > 0 && (
-                  <span style={{
                     background: RED, color: '#fff',
-                    fontSize: '0.65rem', fontWeight: 800,
-                    borderRadius: '999px', padding: '2px 8px',
-                  }}>{itemCount}</span>
-                )}
+                    border: 'none', width: '100%',
+                    fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+                    fontSize: '0.85rem', letterSpacing: '2px', cursor: 'pointer',
+                  }}>
+                  <span>🛵</span> ORDER ONLINE
+                </button>
+              )}
+              <Link to="/orders" style={{
+                display: 'flex', alignItems: 'center', gap: '16px',
+                padding: '16px 24px', color: MUTED, textDecoration: 'none',
+                fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+                fontSize: '0.85rem', letterSpacing: '2px',
+              }}>
+                <span>📦</span> ORDERS
+              </Link>
+              <Link to="/profile" style={{
+                display: 'flex', alignItems: 'center', gap: '16px',
+                padding: '16px 24px', color: MUTED, textDecoration: 'none',
+                fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+                fontSize: '0.85rem', letterSpacing: '2px',
+              }}>
+                <span>👤</span> PROFILE
               </Link>
             </nav>
           </div>
         )}
       </header>
 
-      {/* Bottom accent */}
-      <div style={{
-        height: '3px',
-        background: 'linear-gradient(to right, #DC2626, #FCA5A5, transparent)',
-      }} />
+      <div style={{ height: '2px', background: 'linear-gradient(to right, #DC2626, #FCA5A5, transparent)' }} />
+
+      <DeliveryModal
+        isOpen={deliveryModalOpen}
+        onClose={() => setDeliveryModalOpen(false)}
+        onSelect={handleDeliveryMethodSelect}
+      />
     </>
   );
 };
