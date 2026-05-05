@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface DeliveryModalProps {
@@ -22,16 +22,6 @@ const RESTAURANT_LOCATIONS = [
   { city: 'Ottawa', address: '678 Rideau Street, Ottawa, ON K1N 5Y8', hours: 'Daily 10:00 – 23:00', lat: 45.4215, lng: -75.6972 },
 ];
 
-const STREETS_DATABASE = [
-  '1234 Robson Street, Vancouver, BC', '567 Granville Street, Vancouver, BC',
-  '890 Burrard Street, Vancouver, BC', '234 Davie Street, Vancouver, BC',
-  '456 Denman Street, Vancouver, BC', '789 Main Street, Vancouver, BC',
-  '567 Queen Street West, Toronto, ON', '123 King Street West, Toronto, ON',
-  '456 Yonge Street, Toronto, ON', '789 Bloor Street West, Toronto, ON',
-  '890 Saint-Catherine St W, Montreal, QC', '123 Saint-Laurent Boulevard, Montreal, QC',
-  '345 17th Ave SW, Calgary, AB', '678 Rideau Street, Ottawa, ON',
-];
-
 const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState<'choose' | 'delivery' | 'pickup'>('choose');
@@ -40,6 +30,7 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedCity, setSelectedCity] = useState(RESTAURANT_LOCATIONS[0]);
   const [isMobile, setIsMobile] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -53,27 +44,31 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
       setStep('choose');
       setAddress('');
       setShowSuggestions(false);
+      setSelectedCity(RESTAURANT_LOCATIONS[0]);
     }
   }, [isOpen]);
 
+  // Автодополнение адреса
   const handleAddressChange = (value: string) => {
     setAddress(value);
-    if (value.length >= 3) {
-      const filtered = STREETS_DATABASE.filter(street =>
-        street.toLowerCase().includes(value.toLowerCase())
-      ).slice(0, 8);
+    if (value.length >= 2) {
+      const filtered = CANADA_ADDRESSES.filter(addr =>
+        addr.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 6);
       setSuggestions(filtered);
       setShowSuggestions(filtered.length > 0);
     } else {
       setShowSuggestions(false);
     }
+    
+    // Определяем город для карты
     const found = RESTAURANT_LOCATIONS.find(loc =>
       value.toLowerCase().includes(loc.city.toLowerCase())
     );
     if (found) setSelectedCity(found);
   };
 
-  const selectAddress = (addr: string) => {
+  const selectSuggestion = (addr: string) => {
     setAddress(addr);
     setShowSuggestions(false);
     const found = RESTAURANT_LOCATIONS.find(loc =>
@@ -82,20 +77,42 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
     if (found) setSelectedCity(found);
   };
 
+  // Сохраняем и идём дальше
   const handleDeliveryConfirm = () => {
     if (address.trim().length >= 5) {
+      const parts = address.split(',');
+      let street = '';
+      let city = '';
+      if (parts.length >= 3) {
+        street = parts[0].trim();
+        city = parts[1].trim();
+      } else if (parts.length === 2) {
+        city = parts[0].trim();
+      } else {
+        street = address;
+      }
+      localStorage.setItem('sushimate_delivery_street', street);
+      localStorage.setItem('sushimate_delivery_city', city);
       onSelect('delivery', address);
       navigate('/order');
     }
   };
 
+  // Выбор самовывоза
   const handlePickupSelect = (location: typeof RESTAURANT_LOCATIONS[0]) => {
     onSelect('pickup', location.address);
     navigate('/order');
   };
 
-  const getGoogleMapsUrl = () => {
-    return `https://maps.google.com/maps?q=${selectedCity.lat},${selectedCity.lng}&z=13&output=embed`;
+  // Карта пользователя (доставка)
+  const getUserMapUrl = () => {
+    const query = encodeURIComponent(address || selectedCity.address);
+    return `https://maps.google.com/maps?q=${query}&z=15&output=embed`;
+  };
+
+  // Карта ресторанов (самовывоз)
+  const getRestaurantMapUrl = () => {
+    return `https://maps.google.com/maps?q=${selectedCity.lat},${selectedCity.lng}&z=14&output=embed`;
   };
 
   if (!isOpen) return null;
@@ -112,33 +129,39 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
         background: WHITE,
         borderRadius: isMobile ? '20px 20px 0 0' : '24px',
         width: '100%',
-        maxWidth: step === 'delivery' ? (isMobile ? '100%' : '1100px') : (isMobile ? '100%' : '700px'),
+        maxWidth: step === 'delivery' ? (isMobile ? '100%' : '1100px') : (isMobile ? '100%' : '800px'),
         maxHeight: isMobile ? '90vh' : '85vh',
         overflow: 'auto',
         boxShadow: '0 30px 80px rgba(220,38,38,0.25)',
         position: 'relative',
       }}>
+        {/* Крестик */}
         <button onClick={onClose} style={{
           position: 'absolute', top: '16px', right: '16px', zIndex: 10,
           width: '36px', height: '36px',
           background: WHITE, border: '2px solid #FEE2E2', color: MUTED,
           fontSize: '1rem', cursor: 'pointer', borderRadius: '50%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.2s',
         }}
         onMouseEnter={e => {
           (e.currentTarget as HTMLElement).style.background = RED;
           (e.currentTarget as HTMLElement).style.color = '#fff';
+          (e.currentTarget as HTMLElement).style.borderColor = RED;
         }}
         onMouseLeave={e => {
           (e.currentTarget as HTMLElement).style.background = WHITE;
           (e.currentTarget as HTMLElement).style.color = MUTED;
+          (e.currentTarget as HTMLElement).style.borderColor = '#FEE2E2';
         }}>
           ✕
         </button>
 
         <div style={{ padding: isMobile ? '32px 20px 24px' : '48px 40px 40px' }}>
           
-          {/* ШАГ 1 */}
+          {/* ══════════════════════════════════════ */}
+          {/* ШАГ 1: ВЫБОР МЕТОДА */}
+          {/* ══════════════════════════════════════ */}
           {step === 'choose' && (
             <>
               <div style={{ textAlign: 'center', marginBottom: isMobile ? '28px' : '40px' }}>
@@ -152,6 +175,10 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
                   fontSize: isMobile ? '1.5rem' : '2rem',
                   fontWeight: 700, color: DARK, marginBottom: '8px',
                 }}>How to get your order?</h2>
+                <p style={{
+                  color: MUTED, fontFamily: "'DM Sans', sans-serif",
+                  fontSize: '0.9rem',
+                }}>Choose delivery or pickup</p>
               </div>
 
               <div style={{
@@ -159,34 +186,52 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
                 gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
                 gap: isMobile ? '16px' : '24px',
               }}>
+                {/* Доставка */}
                 <button onClick={() => setStep('delivery')} style={{
                   padding: isMobile ? '32px 24px' : '48px 32px',
                   background: RED_BG, border: '2px solid #FEE2E2',
                   borderRadius: '16px', cursor: 'pointer',
                   textAlign: 'center', transition: 'all 0.3s',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = RED;
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#FEE2E2';
+                  (e.currentTarget as HTMLElement).style.transform = 'none';
                 }}>
                   <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🛵</div>
                   <h3 style={{
                     fontFamily: "'DM Sans', sans-serif", fontSize: '1.1rem',
                     fontWeight: 700, color: DARK, marginBottom: '6px',
                   }}>Delivery</h3>
-                  <p style={{ color: MUTED, fontSize: '0.82rem' }}>
+                  <p style={{ color: MUTED, fontSize: '0.85rem' }}>
                     Enter your address — we'll deliver to your door
                   </p>
                 </button>
 
+                {/* Самовывоз */}
                 <button onClick={() => setStep('pickup')} style={{
                   padding: isMobile ? '32px 24px' : '48px 32px',
                   background: RED_BG, border: '2px solid #FEE2E2',
                   borderRadius: '16px', cursor: 'pointer',
                   textAlign: 'center', transition: 'all 0.3s',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = RED;
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#FEE2E2';
+                  (e.currentTarget as HTMLElement).style.transform = 'none';
                 }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📍</div>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🏢</div>
                   <h3 style={{
                     fontFamily: "'DM Sans', sans-serif", fontSize: '1.1rem',
                     fontWeight: 700, color: DARK, marginBottom: '6px',
                   }}>Pickup</h3>
-                  <p style={{ color: MUTED, fontSize: '0.82rem' }}>
+                  <p style={{ color: MUTED, fontSize: '0.85rem' }}>
                     Pick up from one of our restaurant locations
                   </p>
                 </button>
@@ -194,7 +239,9 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
             </>
           )}
 
-          {/* ШАГ 2: ДОСТАВКА */}
+          {/* ══════════════════════════════════════ */}
+          {/* ДОСТАВКА — поиск + карта пользователя */}
+          {/* ══════════════════════════════════════ */}
           {step === 'delivery' && (
             <>
               <button onClick={() => setStep('choose')} style={{
@@ -210,7 +257,7 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
                 gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
                 gap: isMobile ? '20px' : '28px',
               }}>
-                {/* Левая колонка — форма */}
+                {/* Левая — форма */}
                 <div style={{ order: isMobile ? 2 : 1 }}>
                   <h3 style={{
                     fontFamily: "'Cormorant Garamond', serif",
@@ -220,160 +267,135 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
                     Enter your delivery address
                   </h3>
                   <p style={{
-                    color: MUTED, fontSize: '0.85rem',
-                    marginBottom: '16px',
+                    color: MUTED, fontSize: '0.85rem', marginBottom: '16px',
                   }}>
-                    Start typing your street address
+                    Start typing your address — it will appear on the map
                   </p>
 
-                  {/* Поиск */}
-                  <div style={{ position: 'relative', marginBottom: '12px' }}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center',
-                      background: WHITE,
-                      border: `2px solid ${showSuggestions ? RED : RED_DIM}`,
-                      borderRadius: '12px', padding: '2px',
-                      transition: 'all 0.2s',
-                    }}>
-                      <span style={{
-                        fontSize: '1rem', padding: '0 10px', color: MUTED,
-                      }}>📍</span>
-                      <input
-                        value={address}
-                        onChange={e => handleAddressChange(e.target.value)}
-                        placeholder="Start typing your street address..."
-                        style={{
-                          flex: 1, padding: '14px 8px',
-                          border: 'none', background: 'transparent',
-                          fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif",
-                          color: DARK, outline: 'none',
-                        }}
-                      />
-                    </div>
+                  {/* Поле ввода — один бордер */}
+                  <div style={{ position: 'relative', marginBottom: '20px' }}>
+                    <input
+                      ref={inputRef}
+                      value={address}
+                      onChange={e => handleAddressChange(e.target.value)}
+                      onFocus={() => {
+                        if (address.length >= 2) setShowSuggestions(true);
+                      }}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      placeholder="Start typing your address..."
+                      style={{
+                        width: '100%',
+                        padding: '14px 18px',
+                        border: `2px solid ${showSuggestions ? RED : RED_DIM}`,
+                        borderRadius: '12px',
+                        fontSize: '0.95rem',
+                        fontFamily: "'DM Sans', sans-serif",
+                        color: DARK,
+                        outline: 'none',
+                        background: WHITE,
+                        transition: 'border-color 0.2s',
+                      }}
+                    />
 
-                    {showSuggestions && (
+                    {/* Подсказки */}
+                    {showSuggestions && suggestions.length > 0 && (
                       <div style={{
-                        position: 'absolute', top: '100%', left: 0, right: 0,
-                        background: WHITE, border: '2px solid #FEE2E2',
-                        borderRadius: '0 0 12px 12px', zIndex: 20,
-                        boxShadow: '0 12px 40px rgba(0,0,0,0.1)',
-                        maxHeight: '200px', overflowY: 'auto', marginTop: '2px',
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        background: WHITE,
+                        border: `2px solid ${RED_DIM}`,
+                        borderTop: 'none',
+                        borderRadius: '0 0 12px 12px',
+                        zIndex: 20,
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+                        maxHeight: '220px',
+                        overflowY: 'auto',
+                        marginTop: '-1px',
                       }}>
-                        {suggestions.map((suggestion, i) => (
-                          <div key={i} onClick={() => selectAddress(suggestion)} style={{
-                            padding: '12px 16px', cursor: 'pointer',
-                            borderBottom: '1px solid #FEF2F2',
-                            fontFamily: "'DM Sans', sans-serif",
-                            fontSize: '0.82rem', color: DARK,
-                            transition: 'all 0.15s',
-                          }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = RED_BG; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
-                            📍 {suggestion}
+                        {suggestions.map((sug, i) => (
+                          <div
+                            key={i}
+                            onMouseDown={() => selectSuggestion(sug)}
+                            style={{
+                              padding: '12px 18px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #FEF2F2',
+                              fontFamily: "'DM Sans', sans-serif",
+                              fontSize: '0.85rem',
+                              color: DARK,
+                              transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={e => {
+                              (e.currentTarget as HTMLElement).style.background = RED_BG;
+                            }}
+                            onMouseLeave={e => {
+                              (e.currentTarget as HTMLElement).style.background = 'transparent';
+                            }}>
+                            📍 {sug}
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
 
-                  {/* Быстрые города */}
-                  <div style={{ marginBottom: '16px' }}>
-                    <div style={{
-                      display: 'flex', flexWrap: 'wrap', gap: '6px',
+                  <button
+                    onClick={handleDeliveryConfirm}
+                    disabled={address.trim().length < 5}
+                    style={{
+                      width: '100%', padding: '14px',
+                      background: address.trim().length >= 5 ? RED : '#D1D5DB',
+                      color: '#fff', border: 'none', borderRadius: '50px',
+                      cursor: address.trim().length >= 5 ? 'pointer' : 'not-allowed',
+                      fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+                      fontSize: '0.82rem', letterSpacing: '2px', textTransform: 'uppercase',
+                      boxShadow: address.trim().length >= 5 ? '0 4px 20px rgba(220,38,38,0.3)' : 'none',
                     }}>
-                      {['Vancouver', 'Toronto', 'Montreal', 'Calgary', 'Ottawa'].map(city => (
-                        <button key={city} onClick={() => handleAddressChange(city)} style={{
-                          padding: '6px 14px',
-                          border: `1px solid ${RED_DIM}`, borderRadius: '50px',
-                          background: address.includes(city) ? RED_BG : 'transparent',
-                          color: address.includes(city) ? RED : MUTED,
-                          cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-                          fontSize: '0.72rem', fontWeight: 600,
-                        }}>
-                          {city}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Рестораны */}
-                  <div style={{
-                    background: RED_BG, borderRadius: '10px',
-                    padding: '12px', marginBottom: '16px',
-                    border: '1px solid #FEE2E2',
-                  }}>
-                    <p style={{
-                      fontSize: '0.7rem', color: RED, fontWeight: 700,
-                      marginBottom: '6px',
-                    }}>🔴 Our locations:</p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                      {RESTAURANT_LOCATIONS.map(loc => (
-                        <button key={loc.city} onClick={() => {
-                          setSelectedCity(loc);
-                          setAddress(loc.address);
-                        }} style={{
-                          padding: '4px 10px',
-                          background: selectedCity.city === loc.city ? RED : WHITE,
-                          color: selectedCity.city === loc.city ? '#fff' : RED,
-                          border: `1px solid ${RED_DIM}`, borderRadius: '50px',
-                          fontSize: '0.65rem', cursor: 'pointer',
-                          fontWeight: 600,
-                        }}>
-                          📍 {loc.city}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button onClick={handleDeliveryConfirm} disabled={address.trim().length < 5} style={{
-                    width: '100%', padding: isMobile ? '14px' : '16px',
-                    background: address.trim().length >= 5 ? RED : '#D1D5DB',
-                    color: '#fff', border: 'none', borderRadius: '50px',
-                    cursor: address.trim().length >= 5 ? 'pointer' : 'not-allowed',
-                    fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
-                    fontSize: '0.8rem', letterSpacing: '2px',
-                    textTransform: 'uppercase',
-                  }}>
-                    {address.trim().length >= 5
-                      ? '✓ Confirm · Browse Menu →'
-                      : 'Type address or select city'}
+                    {address.trim().length >= 5 ? '✓ Confirm & Browse Menu →' : 'Enter your address'}
                   </button>
                 </div>
 
-                {/* Правая колонка — КАРТА */}
+                {/* Правая — КАРТА ПОЛЬЗОВАТЕЛЯ */}
                 <div style={{ order: isMobile ? 1 : 2 }}>
                   <p style={{
                     fontSize: '0.75rem', color: MUTED, marginBottom: '6px',
+                    fontFamily: "'DM Sans', sans-serif",
                   }}>
-                    🗺️ Our restaurant locations
+                    🗺️ Your delivery location
                   </p>
                   <div style={{
                     borderRadius: '12px', overflow: 'hidden',
                     border: '2px solid #FEE2E2',
-                    height: isMobile ? '220px' : '450px',
+                    height: isMobile ? '220px' : '400px',
                     background: '#F9FAFB',
                   }}>
                     <iframe
-                      src={getGoogleMapsUrl()}
+                      src={getUserMapUrl()}
                       width="100%"
                       height="100%"
                       style={{ border: 'none' }}
-                      title="Our restaurant locations"
+                      title="Your location"
                       loading="lazy"
                     />
                   </div>
-                  <p style={{
-                    fontSize: '0.65rem', color: MUTED, marginTop: '6px',
-                    textAlign: 'center',
-                  }}>
-                    📍 {selectedCity.city}
-                  </p>
+                  {address.trim().length >= 5 && (
+                    <p style={{
+                      fontSize: '0.72rem', color: RED, marginTop: '6px',
+                      textAlign: 'center', fontFamily: "'DM Sans', sans-serif",
+                      fontWeight: 600,
+                    }}>
+                      📍 Showing: {address}
+                    </p>
+                  )}
                 </div>
               </div>
             </>
           )}
 
-          {/* ШАГ 2: САМОВЫВОЗ */}
+          {/* ══════════════════════════════════════ */}
+          {/* САМОВЫВОЗ — список + карта ресторанов */}
+          {/* ══════════════════════════════════════ */}
           {step === 'pickup' && (
             <>
               <button onClick={() => setStep('choose')} style={{
@@ -384,62 +406,103 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
                 ← Back
               </button>
 
-              <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📍</div>
-                <h2 style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: isMobile ? '1.4rem' : '1.8rem',
-                  fontWeight: 700, color: DARK, marginBottom: '6px',
-                }}>
-                  Choose a pickup location
-                </h2>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {RESTAURANT_LOCATIONS.map((loc, i) => (
-                  <button key={i} onClick={() => handlePickupSelect(loc)} style={{
-                    padding: isMobile ? '16px' : '22px 24px',
-                    background: RED_BG, border: '2px solid #FEE2E2',
-                    borderRadius: '14px', cursor: 'pointer',
-                    textAlign: 'left', transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.borderColor = RED;
-                    (e.currentTarget as HTMLElement).style.transform = 'translateX(4px)';
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.borderColor = '#FEE2E2';
-                    (e.currentTarget as HTMLElement).style.transform = 'translateX(0)';
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+                gap: isMobile ? '20px' : '28px',
+              }}>
+                {/* Список ресторанов */}
+                <div>
+                  <h3 style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontSize: isMobile ? '1.3rem' : '1.5rem',
+                    fontWeight: 700, color: DARK, marginBottom: '16px',
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <div style={{
-                        width: '48px', height: '48px', borderRadius: '12px',
-                        background: WHITE, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: '1.3rem',
-                        border: '2px solid #FEE2E2', flexShrink: 0,
-                      }}>📍</div>
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{
-                          fontFamily: "'Cormorant Garamond', serif",
-                          fontWeight: 700, color: DARK,
-                          fontSize: isMobile ? '1rem' : '1.2rem',
-                          marginBottom: '4px',
-                        }}>{loc.city}</h4>
-                        <p style={{
-                          color: MUTED, fontSize: '0.78rem',
-                          lineHeight: 1.4, marginBottom: '2px',
-                        }}>📍 {loc.address}</p>
-                        <p style={{ color: RED, fontSize: '0.7rem', fontWeight: 600 }}>
-                          🕐 {loc.hours}
-                        </p>
-                      </div>
-                      <span style={{
-                        color: RED, fontSize: '1.3rem', fontWeight: 700,
-                        alignSelf: 'center',
-                      }}>→</span>
-                    </div>
-                  </button>
-                ))}
+                    Choose a pickup location
+                  </h3>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {RESTAURANT_LOCATIONS.map((loc, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handlePickupSelect(loc)}
+                        style={{
+                          padding: isMobile ? '14px' : '18px 20px',
+                          background: selectedCity.city === loc.city ? RED_BG : WHITE,
+                          border: `2px solid ${selectedCity.city === loc.city ? RED : '#FEE2E2'}`,
+                          borderRadius: '12px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={e => {
+                          setSelectedCity(loc);
+                          (e.currentTarget as HTMLElement).style.borderColor = RED;
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLElement).style.borderColor = '#FEE2E2';
+                        }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                          <div style={{
+                            width: '40px', height: '40px', borderRadius: '10px',
+                            background: selectedCity.city === loc.city ? WHITE : RED_BG,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '1.1rem', flexShrink: 0,
+                            border: `2px solid ${RED_DIM}`,
+                          }}>🏢</div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{
+                              fontWeight: 700, color: DARK,
+                              fontSize: isMobile ? '0.9rem' : '1rem',
+                              marginBottom: '4px',
+                              fontFamily: "'Cormorant Garamond', serif",
+                            }}>{loc.city}</p>
+                            <p style={{
+                              color: MUTED, fontSize: '0.75rem',
+                              lineHeight: 1.4, marginBottom: '2px',
+                            }}>📍 {loc.address}</p>
+                            <p style={{
+                              color: RED, fontSize: '0.68rem', fontWeight: 600,
+                            }}>🕐 {loc.hours}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Карта ресторанов */}
+                <div>
+                  <p style={{
+                    fontSize: '0.75rem', color: MUTED, marginBottom: '6px',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                    🗺️ Our restaurant locations
+                  </p>
+                  <div style={{
+                    borderRadius: '12px', overflow: 'hidden',
+                    border: '2px solid #FEE2E2',
+                    height: isMobile ? '250px' : '450px',
+                    background: '#F9FAFB',
+                    position: 'sticky', top: '20px',
+                  }}>
+                    <iframe
+                      src={getRestaurantMapUrl()}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 'none' }}
+                      title="Our locations"
+                      loading="lazy"
+                    />
+                  </div>
+                  <p style={{
+                    fontSize: '0.72rem', color: RED, marginTop: '6px',
+                    textAlign: 'center', fontFamily: "'DM Sans', sans-serif",
+                    fontWeight: 600,
+                  }}>
+                    📍 {selectedCity.city} — {selectedCity.address}
+                  </p>
+                </div>
               </div>
             </>
           )}
@@ -448,5 +511,67 @@ const DeliveryModal: React.FC<DeliveryModalProps> = ({ isOpen, onClose, onSelect
     </div>
   );
 };
+
+// База канадских адресов
+const CANADA_ADDRESSES = [
+  // Vancouver
+  '1234 Robson Street, Vancouver, BC',
+  '567 Granville Street, Vancouver, BC',
+  '890 Burrard Street, Vancouver, BC',
+  '234 Davie Street, Vancouver, BC',
+  '456 Denman Street, Vancouver, BC',
+  '789 Main Street, Vancouver, BC',
+  '321 West Broadway, Vancouver, BC',
+  '654 Commercial Drive, Vancouver, BC',
+  '987 West 4th Avenue, Vancouver, BC',
+  '1111 Yaletown, Vancouver, BC',
+  '222 Water Street, Gastown, Vancouver, BC',
+  '333 West 10th Avenue, Kitsilano, Vancouver, BC',
+  
+  // Toronto
+  '567 Queen Street West, Toronto, ON',
+  '123 King Street West, Toronto, ON',
+  '456 Yonge Street, Toronto, ON',
+  '789 Bloor Street West, Toronto, ON',
+  '234 College Street, Toronto, ON',
+  '567 Dundas Street West, Toronto, ON',
+  '890 Front Street West, Toronto, ON',
+  '321 Spadina Avenue, Toronto, ON',
+  '654 Bathurst Street, Toronto, ON',
+  '987 Kensington Avenue, Toronto, ON',
+  '111 Distillery Lane, Toronto, ON',
+  '222 Yorkville Avenue, Toronto, ON',
+  
+  // Montreal
+  '890 Saint-Catherine St W, Montreal, QC',
+  '123 Saint-Laurent Boulevard, Montreal, QC',
+  '456 Sherbrooke Street, Montreal, QC',
+  '789 Saint-Denis Street, Montreal, QC',
+  '234 Mont-Royal Avenue, Montreal, QC',
+  '567 Rue de la Commune, Old Montreal, QC',
+  
+  // Calgary
+  '345 17th Ave SW, Calgary, AB',
+  '123 Stephen Avenue, Calgary, AB',
+  '456 Kensington Road NW, Calgary, AB',
+  '789 8th Avenue SW, Calgary, AB',
+  
+  // Ottawa
+  '678 Rideau Street, Ottawa, ON',
+  '123 Bank Street, Ottawa, ON',
+  '456 York Street, ByWard Market, Ottawa, ON',
+  '789 Richmond Road, Westboro, Ottawa, ON',
+  
+  // Edmonton
+  '123 Whyte Avenue, Edmonton, AB',
+  '456 Jasper Avenue, Edmonton, AB',
+  
+  // Others
+  '123 Portage Avenue, Winnipeg, MB',
+  '456 Osborne Street, Winnipeg, MB',
+  '123 Grande Allée, Quebec City, QC',
+  '123 Spring Garden Road, Halifax, NS',
+  '123 Government Street, Victoria, BC',
+];
 
 export default DeliveryModal;

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 
 export interface Product {
   _id?: string | number;
@@ -82,11 +82,13 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     }
     
     case 'UPDATE_QUANTITY': {
-      const newItems = state.items.map(item =>
-        item.id === action.payload.id
-          ? { ...item, quantity: Math.max(0, action.payload.quantity) }
-          : item
-      ).filter(item => item.quantity > 0);
+      const newItems = state.items
+        .map(item =>
+          item.id === action.payload.id
+            ? { ...item, quantity: Math.max(0, action.payload.quantity) }
+            : item
+        )
+        .filter(item => item.quantity > 0);
       const total = calculateTotal(newItems, state.discountPercent);
       return { ...state, items: newItems, total };
     }
@@ -135,25 +137,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 interface CartContextType {
   state: CartState;
   dispatch: React.Dispatch<CartAction>;
-  lastAddedItem: string | null;
-  clearLastAdded: () => void;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
-  const [lastAddedItem, setLastAddedItem] = useState<string | null>(null);
 
-  // Расширяем dispatch для отслеживания добавления
-  const dispatchWithNotification = (action: CartAction) => {
-    dispatch(action);
-    if (action.type === 'ADD_ITEM') {
-      setLastAddedItem(action.payload.name);
-      setTimeout(() => setLastAddedItem(null), 3000);
-    }
-  };
-
+  // Загрузка из localStorage при старте
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem('sushimate_cart');
@@ -176,6 +167,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  // Сохранение корзины
   useEffect(() => {
     try {
       localStorage.setItem('sushimate_cart', JSON.stringify(state.items));
@@ -184,6 +176,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [state.items]);
 
+  // Сохранение промокода
   useEffect(() => {
     try {
       localStorage.setItem('sushimate_promo', JSON.stringify({ 
@@ -195,10 +188,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [state.appliedPromo, state.discountPercent]);
 
-  const clearLastAdded = () => setLastAddedItem(null);
-
   return (
-    <CartContext.Provider value={{ state, dispatch: dispatchWithNotification, lastAddedItem, clearLastAdded }}>
+    <CartContext.Provider value={{ state, dispatch }}>
       {children}
     </CartContext.Provider>
   );

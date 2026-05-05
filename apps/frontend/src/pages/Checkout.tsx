@@ -147,13 +147,6 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ countryDial, phoneNumber, onCou
 
   return (
     <div ref={ref}>
-      <label style={{
-        display: 'block', fontSize: '0.78rem', fontWeight: 700,
-        fontFamily: "'DM Sans', sans-serif", letterSpacing: '1px',
-        color: MUTED, marginBottom: '8px',
-      }}>
-        Phone Number <span style={{ color: RED }}>*</span>
-      </label>
       <div style={{ display: 'flex', gap: '10px' }}>
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <button type="button" onClick={() => setOpen(o => !o)} style={{
@@ -247,8 +240,6 @@ const inputStyle = (): React.CSSProperties => ({
 const Checkout = () => {
   const { state } = useCart();
   const { points } = useLoyalty();
-
-  // ОПРЕДЕЛЕНИЕ МОБИЛЬНОГО
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -265,34 +256,44 @@ const Checkout = () => {
     email: '',
     address: '',
     city: '',
+    province: '',
     building: '',
     apartment: '',
-    entrance: '',
-    floor: '',
-    landmark: '',
+    postalCode: '',
     specialInstructions: '',
   });
 
   const [countryDial, setCountryDial] = useState('+1');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
-  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-  const [showSaved, setShowSaved] = useState(false);
-  const [addressName, setAddressName] = useState('');
 
+  // Загрузка сохранённого адреса
   useEffect(() => {
-    const saved = localStorage.getItem('sushimate_addresses');
-    if (saved) setSavedAddresses(JSON.parse(saved));
-    const last = localStorage.getItem('sushimate_last_address');
-    if (last) {
-      const l = JSON.parse(last);
-      setFormData(prev => ({ ...prev, ...l }));
-      if (l.countryDial) setCountryDial(l.countryDial);
-      if (l.phoneNumber) setPhoneNumber(l.phoneNumber);
+    const savedStreet = localStorage.getItem('sushimate_delivery_street');
+    const savedCity = localStorage.getItem('sushimate_delivery_city');
+    
+    if (savedStreet) {
+      setFormData(prev => ({ ...prev, address: savedStreet }));
     }
+    if (savedCity) {
+      setFormData(prev => ({ ...prev, city: savedCity }));
+    }
+    
+    // Для обратной совместимости
     const savedAddress = localStorage.getItem('sushimate_delivery_address');
-    if (savedAddress) {
-      setFormData(prev => ({ ...prev, address: savedAddress }));
+    if (savedAddress && !savedStreet) {
+      const parts = savedAddress.split(',');
+      if (parts.length >= 3) {
+        setFormData(prev => ({ 
+          ...prev, 
+          address: parts[0].trim(),
+          city: parts[1].trim()
+        }));
+      } else if (parts.length === 2) {
+        setFormData(prev => ({ ...prev, city: parts[0].trim() }));
+      } else {
+        setFormData(prev => ({ ...prev, address: savedAddress }));
+      }
     }
   }, []);
 
@@ -322,43 +323,18 @@ const Checkout = () => {
     return true;
   };
 
-  const saveAddress = () => {
-    if (!addressName.trim()) return alert('Enter a name for this address');
-    if (!formData.address || !formData.city) return alert('Fill Street and City first');
-    const entry = { id: Date.now().toString(), label: addressName, ...formData, countryDial, phoneNumber };
-    const updated = [...savedAddresses, entry];
-    setSavedAddresses(updated);
-    localStorage.setItem('sushimate_addresses', JSON.stringify(updated));
-    setAddressName('');
-    alert('✅ Address saved!');
-  };
-
-  const loadAddress = (addr: any) => {
-    const { countryDial: cd, phoneNumber: ph, ...rest } = addr;
-    setFormData(f => ({ ...f, ...rest }));
-    if (cd) setCountryDial(cd);
-    if (ph) setPhoneNumber(ph);
-    setShowSaved(false);
-  };
-
-  const deleteAddress = (id: string) => {
-    const updated = savedAddresses.filter(a => a.id !== id);
-    setSavedAddresses(updated);
-    localStorage.setItem('sushimate_addresses', JSON.stringify(updated));
-  };
-
   const handleProceed = () => {
-    if (!formData.name || !formData.email || !formData.address || !formData.city || !formData.building) {
-      return alert('Please fill in all required fields');
+    if (!formData.name || !formData.email || !formData.address || !formData.city || !formData.building || !formData.postalCode) {
+      return alert('Please fill in all required fields: Name, Email, Street, City, Building, Postal Code');
     }
     if (!validatePhone()) return;
 
     const fullPhone = `${countryDial}${phoneNumber}`;
-    const fullAddress = `${formData.building}, ${formData.address}, ${formData.city}`;
+    const fullAddress = `${formData.building} ${formData.address}${formData.apartment ? ', ' + formData.apartment : ''}, ${formData.city}, ${formData.province}, ${formData.postalCode}`;
 
     const orderData = {
       customer: { name: formData.name, phone: fullPhone, email: formData.email },
-      delivery: { ...formData, phone: fullPhone, fullAddress, specialInstructions: formData.specialInstructions },
+      delivery: { ...formData, phone: fullPhone, fullAddress },
       items: state.items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, total: i.price * i.quantity })),
       subtotal, promoDiscount: promoDisc, promoCode: state.appliedPromo,
       promoDiscountPercent: state.discountPercent,
@@ -366,7 +342,6 @@ const Checkout = () => {
       deliveryFee: delivery, total: finalTotal, usePoints,
     };
     sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
-    localStorage.setItem('sushimate_last_address', JSON.stringify({ ...formData, countryDial, phoneNumber }));
 
     const nameParts = formData.name.trim().split(/\s+/);
     const firstName = nameParts[0] || '';
@@ -389,10 +364,10 @@ const Checkout = () => {
       order_id: orderId,
       billing_first_name: firstName,
       billing_last_name: lastName,
-      billing_address_1: `${formData.building}, ${formData.address}`,
+      billing_address_1: `${formData.building} ${formData.address}`,
       billing_city: formData.city,
-      billing_state: '',
-      billing_postcode: '00000',
+      billing_state: formData.province,
+      billing_postcode: formData.postalCode,
       billing_country: 'CA',
       billing_email: formData.email,
       billing_phone: fullPhone,
@@ -405,18 +380,16 @@ const Checkout = () => {
     return (
       <div style={{
         minHeight: '60vh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: 16,
-        background: '#F9FAFB',
+        alignItems: 'center', justifyContent: 'center', gap: 16, background: '#F9FAFB',
       }}>
         <div style={{ fontSize: '2.5rem' }}>🛒</div>
         <p style={{ color: MUTED, fontFamily: "'Cormorant Garamond', serif", fontSize: '1.3rem' }}>
           Your cart is empty
         </p>
         <Link to="/order" style={{
-          background: RED, color: '#fff', padding: '14px 36px',
-          borderRadius: '50px', fontFamily: "'DM Sans', sans-serif",
-          fontWeight: 700, fontSize: '0.8rem', letterSpacing: '2px',
-          textTransform: 'uppercase', textDecoration: 'none',
+          background: RED, color: '#fff', padding: '14px 36px', borderRadius: '50px',
+          fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+          fontSize: '0.8rem', letterSpacing: '2px', textTransform: 'uppercase', textDecoration: 'none',
         }}>
           Browse Menu
         </Link>
@@ -424,96 +397,66 @@ const Checkout = () => {
     );
   }
 
-  // ═══════════════════════════════════════════════
-  // МОБИЛЬНАЯ ВЕРСИЯ
-  // ═══════════════════════════════════════════════
+  // ═══ МОБИЛЬНАЯ ВЕРСИЯ ═══
   if (isMobile) {
     return (
       <div style={{ background: '#F9FAFB', minHeight: '100vh', padding: '16px 16px 32px' }}>
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: '0.6rem',
-            letterSpacing: '4px', color: RED, textTransform: 'uppercase',
-            marginBottom: '6px',
-          }}>SushiMate</div>
-          <h1 style={{
-            fontFamily: "'Cormorant Garamond', serif", fontSize: '1.8rem',
-            fontWeight: 700, color: DARK,
-          }}>Checkout</h1>
+          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.6rem', letterSpacing: '4px', color: RED, textTransform: 'uppercase', marginBottom: '6px' }}>SushiMate</div>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.8rem', fontWeight: 700, color: DARK }}>Checkout</h1>
         </div>
 
-        {/* Форма */}
-        <div style={{
-          background: WHITE, border: '1px solid #FEE2E2',
-          borderRadius: '14px', padding: '16px', marginBottom: '12px',
-        }}>
-          <h2 style={{
-            fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem',
-            fontWeight: 700, color: DARK, marginBottom: '14px',
-          }}>Delivery Information</h2>
+        <div style={{ background: WHITE, border: '1px solid #FEE2E2', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem', fontWeight: 700, color: DARK, marginBottom: '14px' }}>Delivery Information</h2>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Field label="Full Name" required>
-              <input name="name" value={formData.name} onChange={handleInput}
-                placeholder="John Smith" required style={inputStyle()}
-                onFocus={e => e.target.style.borderColor = RED}
-                onBlur={e => e.target.style.borderColor = RED_DIM} />
+              <input name="name" value={formData.name} onChange={handleInput} placeholder="John Smith" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
             </Field>
 
             <Field label="Email" required>
-              <input name="email" type="email" value={formData.email}
-                onChange={handleInput} placeholder="you@example.com" required
-                style={inputStyle()}
-                onFocus={e => e.target.style.borderColor = RED}
-                onBlur={e => e.target.style.borderColor = RED_DIM} />
+              <input name="email" type="email" value={formData.email} onChange={handleInput} placeholder="you@example.com" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
             </Field>
 
-            <PhoneInput
-              countryDial={countryDial}
-              phoneNumber={phoneNumber}
-              onCountryChange={setCountryDial}
-              onPhoneChange={v => { setPhoneNumber(v); setPhoneError(''); }}
-              error={phoneError}
-            />
-
-            <Autocomplete label="City" value={formData.city}
-              onChange={v => setFormData(f => ({ ...f, city: v }))}
-              suggestions={CANADA_CITIES} placeholder="City" required />
-
-            <Autocomplete label="Street / Area" value={formData.address}
-              onChange={v => setFormData(f => ({ ...f, address: v }))}
-              suggestions={CANADA_AREAS} placeholder="Street" required />
-
-            <Field label="Building / Villa" required>
-              <input name="building" value={formData.building}
-                onChange={handleInput} placeholder="Building name" required
-                style={inputStyle()}
-                onFocus={e => e.target.style.borderColor = RED}
-                onBlur={e => e.target.style.borderColor = RED_DIM} />
+            <Field label="Street Address" required>
+              <input name="address" value={formData.address} onChange={handleInput} placeholder="123 King Street West" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
             </Field>
 
-            <Field label="Instructions">
-              <textarea name="specialInstructions"
-                value={formData.specialInstructions}
-                onChange={handleInput} rows={2}
-                placeholder="Ring bell, leave with security…"
-                style={{ ...inputStyle(), resize: 'none' }}
-                onFocus={e => e.target.style.borderColor = RED}
-                onBlur={e => e.target.style.borderColor = RED_DIM} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Field label="City" required>
+                <input name="city" value={formData.city} onChange={handleInput} placeholder="Toronto" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
+              </Field>
+              <Field label="Province" required>
+                <input name="province" value={formData.province} onChange={handleInput} placeholder="ON" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
+              </Field>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Field label="Building / House #" required>
+                <input name="building" value={formData.building} onChange={handleInput} placeholder="123" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
+              </Field>
+              <Field label="Apartment / Unit">
+                <input name="apartment" value={formData.apartment} onChange={handleInput} placeholder="Apt 4B" style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
+              </Field>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Field label="Postal Code" required>
+                <input name="postalCode" value={formData.postalCode} onChange={handleInput} placeholder="M5V 2B7" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
+              </Field>
+              <Field label="Phone Number" required>
+                <PhoneInput countryDial={countryDial} phoneNumber={phoneNumber} onCountryChange={setCountryDial} onPhoneChange={v => { setPhoneNumber(v); setPhoneError(''); }} error={phoneError} />
+              </Field>
+            </div>
+
+            <Field label="Delivery Instructions">
+              <textarea name="specialInstructions" value={formData.specialInstructions} onChange={handleInput} rows={2} placeholder="Buzz code, leave at door..." style={{ ...inputStyle(), resize: 'none' }} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
             </Field>
           </div>
         </div>
 
-        {/* Сумма */}
-        <div style={{
-          background: WHITE, border: '1px solid #FEE2E2',
-          borderRadius: '14px', padding: '16px', marginBottom: '12px',
-        }}>
-          <h2 style={{
-            fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem',
-            fontWeight: 700, color: DARK, marginBottom: '12px',
-          }}>Order Summary</h2>
-
+        <div style={{ background: WHITE, border: '1px solid #FEE2E2', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem', fontWeight: 700, color: DARK, marginBottom: '12px' }}>Order Summary</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
             {state.items.map(item => (
               <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
@@ -522,7 +465,6 @@ const Checkout = () => {
               </div>
             ))}
           </div>
-
           <div style={{ borderTop: `2px solid ${RED_DIM}`, paddingTop: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '0.82rem' }}>
               <span style={{ color: MUTED }}>Subtotal</span>
@@ -530,9 +472,7 @@ const Checkout = () => {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '0.82rem' }}>
               <span style={{ color: MUTED }}>Delivery</span>
-              <span style={{ color: delivery === 0 ? '#059669' : DARK }}>
-                {delivery === 0 ? 'Free' : `${delivery} CAD`}
-              </span>
+              <span style={{ color: delivery === 0 ? '#059669' : DARK }}>{delivery === 0 ? 'Free' : `${delivery} CAD`}</span>
             </div>
             {state.discountPercent > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '0.82rem' }}>
@@ -540,126 +480,90 @@ const Checkout = () => {
                 <span style={{ color: '#059669' }}>-{promoDisc.toFixed(0)} CAD</span>
               </div>
             )}
-            <div style={{
-              display: 'flex', justifyContent: 'space-between',
-              paddingTop: '8px', borderTop: `2px solid ${RED_DIM}`,
-              marginTop: '4px',
-            }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: `2px solid ${RED_DIM}`, marginTop: '4px' }}>
               <span style={{ fontSize: '1.1rem', fontWeight: 700, color: DARK }}>Total</span>
               <span style={{ fontSize: '1.1rem', fontWeight: 700, color: RED }}>{finalTotal.toFixed(0)} CAD</span>
             </div>
           </div>
         </div>
 
-        {/* КНОПКА СНИЗУ */}
         <button onClick={handleProceed} style={{
-          width: '100%', padding: '16px',
-          background: RED, color: '#fff', border: 'none',
-          borderRadius: '50px',
-          fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
-          fontSize: '0.85rem', letterSpacing: '2px',
-          textTransform: 'uppercase', cursor: 'pointer',
+          width: '100%', padding: '16px', background: RED, color: '#fff', border: 'none',
+          borderRadius: '50px', fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
+          fontSize: '0.85rem', letterSpacing: '2px', textTransform: 'uppercase', cursor: 'pointer',
           boxShadow: '0 4px 20px rgba(220,38,38,0.3)',
         }}>
           Proceed to Payment · {finalTotal.toFixed(0)} CAD
         </button>
 
-        <Link to="/order" style={{
-          display: 'block', textAlign: 'center', color: RED,
-          fontSize: '0.8rem', fontWeight: 600,
-          fontFamily: "'DM Sans', sans-serif", textDecoration: 'none',
-          marginTop: '14px',
-        }}>
+        <Link to="/order" style={{ display: 'block', textAlign: 'center', color: RED, fontSize: '0.8rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", textDecoration: 'none', marginTop: '14px' }}>
           ← Continue Shopping
         </Link>
       </div>
     );
   }
 
-  // ═══════════════════════════════════════════════
-  // ДЕСКТОПНАЯ ВЕРСИЯ
-  // ═══════════════════════════════════════════════
+  // ═══ ДЕСКТОПНАЯ ВЕРСИЯ ═══
   return (
     <div style={{ background: '#F9FAFB', minHeight: '100vh', padding: '48px 24px 80px' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: '0.6rem',
-            letterSpacing: '4px', color: RED, textTransform: 'uppercase',
-            marginBottom: '8px',
-          }}>SushiMate</div>
-          <h1 style={{
-            fontFamily: "'Cormorant Garamond', serif", fontSize: '2.5rem',
-            fontWeight: 700, color: DARK,
-          }}>Checkout</h1>
+          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.6rem', letterSpacing: '4px', color: RED, textTransform: 'uppercase', marginBottom: '8px' }}>SushiMate</div>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '2.5rem', fontWeight: 700, color: DARK }}>Checkout</h1>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '28px', alignItems: 'start' }}>
-          {/* Форма слева */}
-          <div style={{
-            background: WHITE, border: '1px solid #FEE2E2',
-            borderRadius: '16px', padding: '36px',
-          }}>
-            <h2 style={{
-              fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem',
-              fontWeight: 700, color: DARK, marginBottom: '24px',
-            }}>Delivery Information</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '28px', alignItems: 'start' }}>
+          <div style={{ background: WHITE, border: '1px solid #FEE2E2', borderRadius: '16px', padding: '36px' }}>
+            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', fontWeight: 700, color: DARK, marginBottom: '24px' }}>Delivery Information</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <Field label="Full Name" required>
-                <input name="name" value={formData.name} onChange={handleInput}
-                  placeholder="John Smith" required style={inputStyle()}
-                  onFocus={e => e.target.style.borderColor = RED}
-                  onBlur={e => e.target.style.borderColor = RED_DIM} />
+                <input name="name" value={formData.name} onChange={handleInput} placeholder="John Smith" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
               </Field>
+
               <Field label="Email" required>
-                <input name="email" type="email" value={formData.email}
-                  onChange={handleInput} placeholder="you@example.com" required
-                  style={inputStyle()}
-                  onFocus={e => e.target.style.borderColor = RED}
-                  onBlur={e => e.target.style.borderColor = RED_DIM} />
+                <input name="email" type="email" value={formData.email} onChange={handleInput} placeholder="you@example.com" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
               </Field>
-              <PhoneInput
-                countryDial={countryDial}
-                phoneNumber={phoneNumber}
-                onCountryChange={setCountryDial}
-                onPhoneChange={v => { setPhoneNumber(v); setPhoneError(''); }}
-                error={phoneError}
-              />
-              <Autocomplete label="City" value={formData.city}
-                onChange={v => setFormData(f => ({ ...f, city: v }))}
-                suggestions={CANADA_CITIES} placeholder="City" required />
-              <Autocomplete label="Street / Area" value={formData.address}
-                onChange={v => setFormData(f => ({ ...f, address: v }))}
-                suggestions={CANADA_AREAS} placeholder="Street" required />
-              <Field label="Building / Villa" required>
-                <input name="building" value={formData.building}
-                  onChange={handleInput} placeholder="Building name" required
-                  style={inputStyle()}
-                  onFocus={e => e.target.style.borderColor = RED}
-                  onBlur={e => e.target.style.borderColor = RED_DIM} />
+
+              <Field label="Street Address" required>
+                <input name="address" value={formData.address} onChange={handleInput} placeholder="123 King Street West" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
               </Field>
-              <Field label="Instructions">
-                <textarea name="specialInstructions"
-                  value={formData.specialInstructions}
-                  onChange={handleInput} rows={3}
-                  placeholder="Ring bell, leave with security…"
-                  style={{ ...inputStyle(), resize: 'none' }}
-                  onFocus={e => e.target.style.borderColor = RED}
-                  onBlur={e => e.target.style.borderColor = RED_DIM} />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <Field label="City" required>
+                  <input name="city" value={formData.city} onChange={handleInput} placeholder="Toronto" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
+                </Field>
+                <Field label="Province" required>
+                  <input name="province" value={formData.province} onChange={handleInput} placeholder="ON" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
+                </Field>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <Field label="Building / House Number" required>
+                  <input name="building" value={formData.building} onChange={handleInput} placeholder="123" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
+                </Field>
+                <Field label="Apartment / Unit">
+                  <input name="apartment" value={formData.apartment} onChange={handleInput} placeholder="Apt 4B" style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
+                </Field>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <Field label="Postal Code" required>
+                  <input name="postalCode" value={formData.postalCode} onChange={handleInput} placeholder="M5V 2B7" required style={inputStyle()} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
+                </Field>
+                <Field label="Phone Number" required>
+                  <PhoneInput countryDial={countryDial} phoneNumber={phoneNumber} onCountryChange={setCountryDial} onPhoneChange={v => { setPhoneNumber(v); setPhoneError(''); }} error={phoneError} />
+                </Field>
+              </div>
+
+              <Field label="Delivery Instructions">
+                <textarea name="specialInstructions" value={formData.specialInstructions} onChange={handleInput} rows={2} placeholder="Buzz code, leave at door, side entrance..." style={{ ...inputStyle(), resize: 'none' }} onFocus={e => e.target.style.borderColor = RED} onBlur={e => e.target.style.borderColor = RED_DIM} />
               </Field>
             </div>
           </div>
 
-          {/* Сайдбар справа */}
           <div style={{ position: 'sticky', top: '100px' }}>
-            <div style={{
-              background: WHITE, border: '1px solid #FEE2E2',
-              borderRadius: '16px', padding: '28px',
-            }}>
-              <h2 style={{
-                fontFamily: "'Cormorant Garamond', serif", fontSize: '1.4rem',
-                fontWeight: 700, color: DARK, marginBottom: '18px',
-              }}>Order Summary</h2>
+            <div style={{ background: WHITE, border: '1px solid #FEE2E2', borderRadius: '16px', padding: '28px' }}>
+              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.4rem', fontWeight: 700, color: DARK, marginBottom: '18px' }}>Order Summary</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
                 {state.items.map(item => (
                   <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
@@ -675,9 +579,7 @@ const Checkout = () => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <span style={{ color: MUTED }}>Delivery</span>
-                  <span style={{ color: delivery === 0 ? '#059669' : DARK }}>
-                    {delivery === 0 ? 'Free' : `${delivery} CAD`}
-                  </span>
+                  <span style={{ color: delivery === 0 ? '#059669' : DARK }}>{delivery === 0 ? 'Free' : `${delivery} CAD`}</span>
                 </div>
                 {state.discountPercent > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -685,22 +587,17 @@ const Checkout = () => {
                     <span style={{ color: '#059669' }}>-{promoDisc.toFixed(0)} CAD</span>
                   </div>
                 )}
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between',
-                  paddingTop: '10px', borderTop: `2px solid ${RED_DIM}`,
-                }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '10px', borderTop: `2px solid ${RED_DIM}` }}>
                   <span style={{ fontSize: '1.2rem', fontWeight: 700, color: DARK }}>Total</span>
                   <span style={{ fontSize: '1.2rem', fontWeight: 700, color: RED }}>{finalTotal.toFixed(0)} CAD</span>
                 </div>
               </div>
               <button onClick={handleProceed} style={{
                 marginTop: '20px', width: '100%', padding: '14px',
-                background: RED, color: '#fff', border: 'none',
-                borderRadius: '50px',
+                background: RED, color: '#fff', border: 'none', borderRadius: '50px',
                 fontFamily: "'DM Sans', sans-serif", fontWeight: 700,
-                fontSize: '0.78rem', letterSpacing: '2px',
-                textTransform: 'uppercase', cursor: 'pointer',
-                transition: 'all 0.2s',
+                fontSize: '0.78rem', letterSpacing: '2px', textTransform: 'uppercase',
+                cursor: 'pointer', transition: 'all 0.2s',
                 boxShadow: '0 4px 20px rgba(220,38,38,0.3)',
               }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#EF4444'; }}
@@ -710,8 +607,7 @@ const Checkout = () => {
               <Link to="/order" style={{
                 display: 'block', textAlign: 'center', color: RED,
                 fontSize: '0.78rem', fontWeight: 600,
-                fontFamily: "'DM Sans', sans-serif", textDecoration: 'none',
-                marginTop: '12px',
+                fontFamily: "'DM Sans', sans-serif", textDecoration: 'none', marginTop: '12px',
               }}>
                 ← Continue Shopping
               </Link>
